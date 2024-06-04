@@ -51,8 +51,20 @@ private string getRepeatablePartOfDescr(in char[] line)
 	return ret;
 }
 
-void main()
+import args: Arg;
+
+struct CliOptions
 {
+	@Arg("Suppress # 123 \"/path/to/file.h\" lines") bool suppress_refs;
+}
+
+void main(string[] args)
+{
+	import args: parseArgsWithConfigFile;
+
+	CliOptions options;
+	parseArgsWithConfigFile(options, args);
+
 	import std.stdio: stdin, File;
 	import std.string: chomp;
 
@@ -62,13 +74,13 @@ void main()
 	{
 		auto file = File(filename.chomp);
 
-		processFile(file);
+		processFile(options, file);
 	}
 }
 
 Storage result;
 
-void processFile(F)(F file)
+void processFile(F)(in CliOptions options, F file)
 {
 	import std.stdio;
 	import std.typecons: Yes;
@@ -77,16 +89,20 @@ void processFile(F)(F file)
 
 	foreach(line; file.byLine(Yes.keepTerminator))
 	{
+		const isLineDescr = line.isLineDescr();
+		string repeatableDescr;
+
 		// Started new block?
-		if(line.isLineDescr && current.repeatableDescr != getRepeatablePartOfDescr(line))
+		if(isLineDescr && ((repeatableDescr = getRepeatablePartOfDescr(line)) != current.repeatableDescr))
 		{
 			// Store previous block
 			result.store(current);
 
-			current = CodeBlock(getRepeatablePartOfDescr(line)); //FIXME: redundant call
+			current = CodeBlock(repeatableDescr);
 		}
 
-		current.code ~= line.idup;
+		if(!(isLineDescr && options.suppress_refs))
+			current.code ~= line.idup;
 	}
 
 	// Store latest
