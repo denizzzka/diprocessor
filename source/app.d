@@ -54,6 +54,7 @@ import args: Arg;
 
 struct CliOptions
 {
+	@Arg("Add // before # 123 \"/path/to/file.h\" lines") bool refs_as_comments;
 	@Arg("Suppress # 123 \"/path/to/file.h\" lines") bool suppress_refs;
 }
 
@@ -108,8 +109,16 @@ void processFile(F)(in CliOptions options, F file)
 			current = CodeBlock(repeatableDescr);
 		}
 
-		if(!(isLineDescr && options.suppress_refs))
-			current.code ~= line.idup;
+		if(isLineDescr)
+		{
+			if(options.suppress_refs)
+				continue;
+
+			if(options.refs_as_comments)
+				current.code ~= "//";
+		}
+
+		current.code ~= line.idup;
 	}
 
 	// Store latest
