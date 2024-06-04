@@ -1,7 +1,7 @@
-struct CodePiece
+struct CodeBlock
 {
-	string descrLine;
-	string code;
+	string repeatableDescr;
+	string[] code;
 }
 
 struct Storage
@@ -9,19 +9,46 @@ struct Storage
 	import std.container: DList;
 
 	static bool[string] indexArray;
-	DList!CodePiece list;
+	DList!CodeBlock list;
 
 	alias list this;
 
 	// Store if not empty and not was added previously
-	void store(ref CodePiece c)
+	void store(ref CodeBlock c)
 	{
-		if(c.descrLine != "" /*&& (c.descrLine in indexArray) is null*/)
+		//TODO: add better check for different blocks with same repeatableDescr
+		if(c.repeatableDescr != "" && (c.repeatableDescr in indexArray) is null)
 		{
 			list.insertBack(c);
-			indexArray[c.descrLine] = true;
+			indexArray[c.repeatableDescr] = true;
 		}
 	}
+}
+
+private bool isLineDescr(in char[] line)
+{
+	return line.length > 1 && line[0] == '#' && line[1] == ' ';
+}
+
+private string getRepeatablePartOfDescr(in char[] line)
+{
+	int quotesFound;
+	string ret;
+
+	foreach(i, c; line)
+	{
+		if(c == '"')
+		{
+			quotesFound++;
+
+			if(quotesFound == 2)
+				ret = line[2 .. i].idup; // ommits latest quote, but we don't need it for indexing
+		}
+	}
+
+	assert(quotesFound == 2, "malformed line: "~line);
+
+	return ret;
 }
 
 void main()
@@ -34,20 +61,20 @@ void main()
 
 	auto file = File("tasks.c.i");
 
-	CodePiece current;
+	CodeBlock current;
 
 	foreach(line; file.byLine(Yes.keepTerminator))
 	{
-		// Started new piece of code?
-		if(line.length > 1 && line[0] == '#' && line[1] == ' ')
+		// Started new block?
+		if(line.isLineDescr && current.repeatableDescr != getRepeatablePartOfDescr(line))
 		{
+			// Store previous block
 			result.store(current);
-			current = CodePiece(line.idup, null);
+
+			current = CodeBlock(getRepeatablePartOfDescr(line)); //FIXME: redundant call
 		}
-		else
-		{
-			current.code ~= line;
-		}
+
+		current.code ~= line.idup;
 	}
 
 	// Store latest
@@ -56,8 +83,6 @@ void main()
 	auto store_file = File("result.i", "w");
 
 	foreach(elem; result)
-	{
-		store_file.write(elem.descrLine);
-		store_file.write(elem.code);
-	}
+		foreach(s; elem.code)
+			store_file.write(s);
 }
