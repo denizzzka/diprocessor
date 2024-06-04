@@ -4,23 +4,33 @@ struct CodePiece
 	string code;
 }
 
-private void storeIfNotEmpty(T)(ref T list, ref CodePiece c)
+struct Storage
 {
-	if(c.descrLine != "")
-		list.insertBack(c);
+	import std.container: DList;
+
+	static bool[string] indexArray;
+	DList!CodePiece list;
+
+	alias list this;
+
+	// Store if not empty and not was added previously
+	void store(ref CodePiece c)
+	{
+		if(c.descrLine != "" /*&& (c.descrLine in indexArray) is null*/)
+		{
+			list.insertBack(c);
+			indexArray[c.descrLine] = true;
+		}
+	}
 }
 
 void main()
 {
 	import std.stdio;
-	//~ import std.array: assocArray;
-	import std.container: DList;
 	import std.stdio: File;
 	import std.typecons: Yes;
-	//~ import std.algorithm: map;
 
-	auto result = DList!CodePiece();
-	CodePiece*[string] indexArray;
+	Storage result;
 
 	auto file = File("tasks.c.i");
 
@@ -31,7 +41,7 @@ void main()
 		// Started new piece of code?
 		if(line.length > 1 && line[0] == '#' && line[1] == ' ')
 		{
-			result.storeIfNotEmpty(current);
+			result.store(current);
 			current = CodePiece(line.idup, null);
 		}
 		else
@@ -41,7 +51,7 @@ void main()
 	}
 
 	// Store latest
-	result.storeIfNotEmpty(current);
+	result.store(current);
 
 	auto store_file = File("result.i", "w");
 
