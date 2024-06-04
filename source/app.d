@@ -4,12 +4,11 @@ struct CodeBlock
 	string[] code;
 }
 
-private bool[string] storageIndexArray;
-
 struct Storage
 {
 	import std.container: DList;
 
+	static bool[string] storageIndexArray;
 	DList!CodeBlock list;
 	alias list this;
 
@@ -66,7 +65,7 @@ void main(string[] args)
 	parseArgsWithConfigFile(options, args);
 	//TODO: detect unrecognized options
 
-	import std.stdio: stdin, File;
+	import std.stdio: stdin, stdout, File;
 	import std.string: chomp;
 
 	string filename;
@@ -77,13 +76,19 @@ void main(string[] args)
 
 		processFile(options, file);
 	}
+
+	//~ auto store_file = File("result.i", "w");
+	auto store_file = stdout;
+
+	foreach(elem; result)
+		foreach(s; elem.code)
+			store_file.write(s);
 }
 
 Storage result;
 
 void processFile(F)(in CliOptions options, F file)
 {
-	import std.stdio;
 	import std.typecons: Yes;
 
 	CodeBlock current;
@@ -109,11 +114,4 @@ void processFile(F)(in CliOptions options, F file)
 
 	// Store latest
 	result.store(current);
-
-	//~ auto store_file = File("result.i", "w");
-	auto store_file = stdout;
-
-	foreach(elem; result)
-		foreach(s; elem.code)
-			store_file.write(s);
 }
