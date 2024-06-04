@@ -1,0 +1,16 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/diprocessor
+diprocessor.so
+diprocessor.dylib
+diprocessor.dll
+diprocessor.a
+diprocessor.lib
+diprocessor-test-*
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst
