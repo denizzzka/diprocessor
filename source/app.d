@@ -53,13 +53,25 @@ private string getRepeatablePartOfDescr(in char[] line)
 
 void main()
 {
+	import std.stdio: stdin, File;
+	import std.string: chomp;
+
+	string filename;
+
+	while((filename = stdin.readln) !is null)
+	{
+		auto file = File(filename.chomp);
+
+		processFile(file);
+	}
+}
+
+Storage result;
+
+void processFile(F)(F file)
+{
 	import std.stdio;
-	import std.stdio: File;
 	import std.typecons: Yes;
-
-	Storage result;
-
-	auto file = File("tasks.c.i");
 
 	CodeBlock current;
 
@@ -80,7 +92,8 @@ void main()
 	// Store latest
 	result.store(current);
 
-	auto store_file = File("result.i", "w");
+	//~ auto store_file = File("result.i", "w");
+	auto store_file = stdout;
 
 	foreach(elem; result)
 		foreach(s; elem.code)
