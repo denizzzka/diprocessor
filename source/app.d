@@ -4,6 +4,12 @@ struct CodePiece
 	string code;
 }
 
+private void storeIfNotEmpty(T)(ref T list, ref CodePiece c)
+{
+	if(c.descrLine != "")
+		list.insertBack(c);
+}
+
 void main()
 {
 	import std.stdio;
@@ -25,11 +31,7 @@ void main()
 		// Started new piece of code?
 		if(line.length > 1 && line[0] == '#' && line[1] == ' ')
 		{
-			// Save previous
-			if(current.descrLine != "")
-				result.insertBack(current);
-
-			// Init new
+			result.storeIfNotEmpty(current);
 			current = CodePiece(line.idup, null);
 		}
 		else
@@ -39,8 +41,7 @@ void main()
 	}
 
 	// Store latest
-	if(current.descrLine != "")
-		result.insertBack(current);
+	result.storeIfNotEmpty(current);
 
 	auto store_file = File("result.i", "w");
 
