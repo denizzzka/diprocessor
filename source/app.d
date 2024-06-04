@@ -4,23 +4,23 @@ struct CodeBlock
 	string[] code;
 }
 
+private bool[string] storageIndexArray;
+
 struct Storage
 {
 	import std.container: DList;
 
-	static bool[string] indexArray;
 	DList!CodeBlock list;
-
 	alias list this;
 
 	// Store if not empty and not was added previously
 	void store(ref CodeBlock c)
 	{
 		//TODO: add better check for different blocks with same repeatableDescr
-		if(c.repeatableDescr != "" && (c.repeatableDescr in indexArray) is null)
+		if(c.repeatableDescr != "" && (c.repeatableDescr in storageIndexArray) is null)
 		{
 			list.insertBack(c);
-			indexArray[c.repeatableDescr] = true;
+			storageIndexArray[c.repeatableDescr] = true;
 		}
 	}
 }
@@ -64,6 +64,7 @@ void main(string[] args)
 
 	CliOptions options;
 	parseArgsWithConfigFile(options, args);
+	//TODO: detect unrecognized options
 
 	import std.stdio: stdin, File;
 	import std.string: chomp;
@@ -98,6 +99,7 @@ void processFile(F)(in CliOptions options, F file)
 			// Store previous block
 			result.store(current);
 
+			// Create new block
 			current = CodeBlock(repeatableDescr);
 		}
 
