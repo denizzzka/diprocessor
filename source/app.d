@@ -10,6 +10,7 @@ void main()
 	//~ import std.array: assocArray;
 	import std.container: DList;
 	import std.stdio: File;
+	import std.typecons: Yes;
 	//~ import std.algorithm: map;
 
 	auto result = DList!CodePiece();
@@ -19,7 +20,7 @@ void main()
 
 	CodePiece current;
 
-	foreach(line; file.byLine())
+	foreach(line; file.byLine(Yes.keepTerminator))
 	{
 		// Started new piece of code?
 		if(line.length > 1 && line[0] == '#' && line[1] == ' ')
@@ -28,18 +29,12 @@ void main()
 			if(current.descrLine != "")
 				result.insertBack(current);
 
-			current.code = null;
-
-			current.descrLine = line[2 .. $].idup;
-
-			writeln("Started new: ", current);
+			// Init new
+			current = CodePiece(line.idup, null);
 		}
 		else
 		{
-			import std.ascii: newline;
-
 			current.code ~= line;
-			current.code ~= newline;
 		}
 	}
 
@@ -51,7 +46,7 @@ void main()
 
 	foreach(elem; result)
 	{
-		store_file.writeln(elem.descrLine);
+		store_file.write(elem.descrLine);
 		store_file.write(elem.code);
 	}
 }
