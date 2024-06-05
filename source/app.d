@@ -19,12 +19,34 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
+    static bool containsOnlyInsignChars(string s)
+    {
+        import std.algorithm;
+
+        return s.all!`a == ' ' || a == '\t' || a == '\r' ||a == '\n'`;
+    }
+
+    unittest
+    {
+        assert(!containsOnlyInsignChars("\ta b c"));
+        assert(containsOnlyInsignChars("\n\t\r"));
+    }
+
     void addLine(size_t num, string[] code, in string fromPreprFile)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
+        import std.algorithm.searching;
         import std.array: insertInPlace;
         import std.algorithm.comparison: equal;
+
+        // Remove insignificant characters. Compilers sometimes put them
+        // in a meaningless way, thereby complicating the analysis.
+        const origCode = code.dup;
+        code.length = 0;
+        foreach(s; origCode)
+            if(!containsOnlyInsignChars(s))
+                code ~= s;
 
         auto sortedList = assumeSorted!byLineNum(list);
 
@@ -37,16 +59,17 @@ struct CodeFile
 
             const found = searchResults[1][0];
 
-            // Check equality of stored and new lines
+            // Merge new line
+            //~ if(found.code.canFind(code))
+                //~ return; // new code is subset of already stored, nothing to do
 
-            enforce(equal(found.code, code),"\n1: "~found.to!string~"\n2: "~filename~" "~code.to!string);
-            //~ enforce(found.originPreprocessedFile != fromPreprFile,
-                //~ "Line #"~num.to!string~" found twice in same preprocessed file\n"~
-                //~ "Stored file: "~found.originPreprocessedFile~"\n"~
-                //~ "New file: "~fromPreprFile~"\n"~
-                //~ "stored code: "~found.code.to!string~"\n"~
-                //~ "code: "~code.to!string,
-            //~ );
+            //~ if(code.canFind(found.code))
+                //~ return; // FIXME
+
+            enforce(equal(found.code, code), "different contents of the same splitten string"~
+                "\n1: "~found.originPreprocessedFile~" "~found.code.to!string~
+                "\n2: "~fromPreprFile~" "~code.to!string
+            );
 
             // Nothing to do: line already stored
             return;
