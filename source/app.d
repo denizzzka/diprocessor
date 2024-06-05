@@ -19,19 +19,6 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    static bool containsOnlyInsignChars(string s)
-    {
-        import std.algorithm;
-
-        return s.all!`a == ' ' || a == '\t' || a == '\r' ||a == '\n'`;
-    }
-
-    unittest
-    {
-        assert(!containsOnlyInsignChars("\ta b c"));
-        assert(containsOnlyInsignChars("\n\t\r"));
-    }
-
     void addLine(size_t num, string[] code, in string fromPreprFile)
     {
         import std.range: assumeSorted;
@@ -39,14 +26,6 @@ struct CodeFile
         import std.algorithm.searching;
         import std.array: insertInPlace;
         import std.algorithm.comparison: equal;
-
-        // Remove insignificant characters. Compilers sometimes put them
-        // in a meaningless way, thereby complicating the analysis.
-        const origCode = code.dup;
-        code.length = 0;
-        foreach(s; origCode)
-            if(!containsOnlyInsignChars(s))
-                code ~= s;
 
         auto sortedList = assumeSorted!byLineNum(list);
 
@@ -99,6 +78,19 @@ unittest
     cf.addLine(3, ["abc"], "2.h");
     assert(cf.list.length == 3);
     assert(cf.list[1] == CodeLine("1.h", 3, ["abc"]), cf.list.to!string);
+}
+
+static bool containsOnlyInsignChars(in char[] s)
+{
+    import std.algorithm;
+
+    return s.all!`a == ' ' || a == '\t' || a == '\r' ||a == '\n'`;
+}
+
+unittest
+{
+    assert(!containsOnlyInsignChars("\ta b c"));
+    assert(containsOnlyInsignChars("\n\t\r"));
 }
 
 struct Storage
@@ -271,7 +263,13 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
         else
         {
             enforce(currentLineNum != 0, "Line number zero is not possible");
-            currCodeLine ~= line.idup;
+
+            // Ignore lines containing only insignificant characters.
+            // Compilers sometimes put them  in a meaningless way,
+            // thereby complicating the analysis.
+            if(!line.containsOnlyInsignChars)
+                currCodeLine ~= line.idup;
+
             currentLineNum++;
         }
     }
