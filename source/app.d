@@ -1,5 +1,6 @@
 struct CodeLine
 {
+    string originPreprocessedFile;
     size_t lineNum;
     string[] code; // one code line can be described on few lines of a preprocessed file
 }
@@ -18,20 +19,34 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    void addLine(size_t num, string[] code)
+    void addLine(size_t num, string[] code, in string fromPreprFile)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
         import std.array: insertInPlace;
+        import std.algorithm.comparison: equal;
 
         auto sortedList = assumeSorted!byLineNum(list);
 
-        CodeLine cl = {lineNum: num, code: code};
+        CodeLine cl = {lineNum: num, code: code, originPreprocessedFile: fromPreprFile};
         auto searchResults = sortedList.trisect(cl);
 
         if(searchResults[1].length != 0)
         {
             assert(searchResults[1].length == 1, "Many code lines with same line number: "~num.to!string~", line: "~code.to!string);
+
+            const found = searchResults[1][0];
+
+            // Check equality of stored and new lines
+
+            enforce(equal(found.code, code),"\n1: "~found.to!string~"\n2: "~filename~" "~code.to!string);
+            //~ enforce(found.originPreprocessedFile != fromPreprFile,
+                //~ "Line #"~num.to!string~" found twice in same preprocessed file\n"~
+                //~ "Stored file: "~found.originPreprocessedFile~"\n"~
+                //~ "New file: "~fromPreprFile~"\n"~
+                //~ "stored code: "~found.code.to!string~"\n"~
+                //~ "code: "~code.to!string,
+            //~ );
 
             // Nothing to do: line already stored
             return;
@@ -46,21 +61,21 @@ unittest
 {
     CodeFile cf;
 
-    cf.addLine(3, ["abc"]);
+    cf.addLine(3, ["abc"], "1.h");
     assert(cf.list.length == 1);
-    assert(cf.list[0] == CodeLine(3, ["abc"]));
+    assert(cf.list[0] == CodeLine("1.h", 3, ["abc"]));
 
-    cf.addLine(2, ["def"]);
+    cf.addLine(2, ["def"], "1.h");
     assert(cf.list.length == 2);
-    assert(cf.list[0] == CodeLine(2, ["def"]));
+    assert(cf.list[0] == CodeLine("1.h", 2, ["def"]));
 
-    cf.addLine(8, ["xyz"]);
+    cf.addLine(8, ["xyz"], "1.h");
     assert(cf.list.length == 3);
-    assert(cf.list[2] == CodeLine(8, ["xyz"]));
+    assert(cf.list[2] == CodeLine("1.h", 8, ["xyz"]));
 
-    cf.addLine(3, ["abc"]);
+    cf.addLine(3, ["abc"], "2.h");
     assert(cf.list.length == 3);
-    assert(cf.list[1] == CodeLine(3, ["abc"]), cf.list.to!string);
+    assert(cf.list[1] == CodeLine("1.h", 3, ["abc"]), cf.list.to!string);
 }
 
 struct Storage
@@ -69,7 +84,7 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(string codeFileName, size_t lineNum, string[] codeline)
+    void store(string preprFileName, string codeFileName, size_t lineNum, string[] codeline)
     {
         size_t* fileIdxPtr = (codeFileName in codeFilesIndex);
         size_t fileIdx;
@@ -84,7 +99,7 @@ struct Storage
         else
             fileIdx = *fileIdxPtr;
 
-        codeFiles[fileIdx].addLine(lineNum, codeline);
+        codeFiles[fileIdx].addLine(lineNum, codeline, preprFileName);
     }
 }
 
@@ -179,9 +194,11 @@ void main(string[] args)
 
     while((filename = stdin.readln) !is null)
     {
-        auto file = File(filename.chomp);
+        const fname = filename.chomp;
 
-        processFile(options, file);
+        auto file = File(fname);
+
+        processFile(options, file, fname);
     }
 
     //~ auto store_file = File("result.i", "w");
@@ -195,7 +212,7 @@ void main(string[] args)
 
 Storage result;
 
-void processFile(F)(in CliOptions options, F file)
+void processFile(F)(in CliOptions options, F file, in string preprFileName)
 {
     import std.typecons: Yes;
 
@@ -220,7 +237,7 @@ void processFile(F)(in CliOptions options, F file)
             else
             {
                 // Store previous
-                result.store(currentCodeFile, currentLineNum, currCodeLine);
+                result.store(preprFileName, currentCodeFile, currentLineNum, currCodeLine);
 
                 // Prepare to new
                 currCodeLine.length = 0;
