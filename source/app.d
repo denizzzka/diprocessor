@@ -32,19 +32,12 @@ struct CodeFile
         auto sortedList = assumeSorted!byLineNum(list);
 
         CodeLine cl = {lineNum: num, code: code};
-        auto searchResults = sortedList.trisect(cl);
+        auto upperPart = sortedList.upperBound(cl);
 
-        if(searchResults[1].length != 0)
-        {
-            assert(searchResults[1].length == 1, "Many code lines with same line number: "~num.to!string~", line: "~code);
-            enforce(searchResults[1][0].code == code, "Different code lines with same line number:\n"~searchResults[1][0].code~"\n"~code);
-
-            // Nothing to do: line already stored
-            return;
-        }
+        const idx = sortedList.length - upperPart.length;
 
         // Adding line
-        list.insertInPlace(searchResults[0].length, cl);
+        list.insertInPlace(idx, cl);
     }
 }
 
@@ -64,9 +57,9 @@ unittest
     assert(cf.list.length == 3);
     assert(cf.list[2] == CodeLine(8, "xyz"));
 
-    cf.addLine(3, "abc");
-    assert(cf.list.length == 3);
-    assert(cf.list[1] == CodeLine(3, "abc"), cf.list.to!string);
+    cf.addLine(3, "+abc");
+    assert(cf.list.length == 4);
+    assert(cf.list[2] == CodeLine(3, "+abc"), cf.list.to!string);
 }
 
 struct Storage
