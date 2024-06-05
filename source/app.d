@@ -1,6 +1,7 @@
 struct CodeLine
 {
     string originPreprocessedFile;
+    size_t originPreprocessedFileLineNum;
     size_t lineNum;
     string[] code; // one code line can be described on few lines of a preprocessed file
 }
@@ -19,7 +20,7 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    void addLine(size_t num, string[] code, in string fromPreprFile)
+    void addLine(size_t num, string[] code, in string fromPreprFile, in size_t preprFileLineNum)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
@@ -29,7 +30,7 @@ struct CodeFile
 
         auto sortedList = assumeSorted!byLineNum(list);
 
-        CodeLine cl = {lineNum: num, code: code, originPreprocessedFile: fromPreprFile};
+        CodeLine cl = {lineNum: num, code: code, originPreprocessedFile: fromPreprFile, originPreprocessedFileLineNum: preprFileLineNum};
         auto searchResults = sortedList.trisect(cl);
 
         if(searchResults[1].length != 0)
@@ -45,9 +46,9 @@ struct CodeFile
             //~ if(code.canFind(found.code))
                 //~ return; // FIXME
 
-            enforce(equal(found.code, code), "different contents of the same splitten string,\norig source: "~filename~":"~num.to!string~
-                "\n1: "~found.originPreprocessedFile~" "~found.code.to!string~
-                "\n2: "~fromPreprFile~" "~code.to!string
+            enforce(equal(found.code, code), "different contents of the same splitten string in source: "~filename~":"~num.to!string~
+                "\n1: "~found.originPreprocessedFile~":"~found.originPreprocessedFileLineNum.to!string~" "~found.code.to!string~
+                "\n2: "~fromPreprFile~":"~preprFileLineNum.to!string~" "~code.to!string
             );
 
             // Nothing to do: line already stored
@@ -63,21 +64,21 @@ unittest
 {
     CodeFile cf;
 
-    cf.addLine(3, ["abc"], "1.h");
+    cf.addLine(3, ["abc"], "1.h", 111);
     assert(cf.list.length == 1);
-    assert(cf.list[0] == CodeLine("1.h", 3, ["abc"]));
+    assert(cf.list[0] == CodeLine("1.h", 111, 3, ["abc"]));
 
-    cf.addLine(2, ["def"], "1.h");
+    cf.addLine(2, ["def"], "1.h", 222);
     assert(cf.list.length == 2);
-    assert(cf.list[0] == CodeLine("1.h", 2, ["def"]));
+    assert(cf.list[0] == CodeLine("1.h", 222, 2, ["def"]));
 
-    cf.addLine(8, ["xyz"], "1.h");
+    cf.addLine(8, ["xyz"], "1.h", 333);
     assert(cf.list.length == 3);
-    assert(cf.list[2] == CodeLine("1.h", 8, ["xyz"]));
+    assert(cf.list[2] == CodeLine("1.h", 333, 8, ["xyz"]));
 
-    cf.addLine(3, ["abc"], "2.h");
+    cf.addLine(3, ["abc"], "2.h", 444);
     assert(cf.list.length == 3);
-    assert(cf.list[1] == CodeLine("1.h", 3, ["abc"]), cf.list.to!string);
+    assert(cf.list[1] == CodeLine("1.h", 111, 3, ["abc"]), cf.list.to!string);
 }
 
 static bool containsOnlyInsignChars(in char[] s)
@@ -99,7 +100,7 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(string preprFileName, string codeFileName, size_t lineNum, string[] codeline)
+    void store(string preprFileName, size_t preprFileLineNum, string codeFileName, size_t lineNum, string[] codeline)
     {
         size_t* fileIdxPtr = (codeFileName in codeFilesIndex);
         size_t fileIdx;
@@ -114,7 +115,7 @@ struct Storage
         else
             fileIdx = *fileIdxPtr;
 
-        codeFiles[fileIdx].addLine(lineNum, codeline, preprFileName);
+        codeFiles[fileIdx].addLine(lineNum, codeline, preprFileName, preprFileLineNum);
     }
 }
 
@@ -231,12 +232,15 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
 {
     import std.typecons: Yes;
 
+    size_t preprFileLineNum;
     string currentCodeFile; // original source (.h file usually)
     size_t currentLineNum; // original source line number (number inside of .h file)
     string[] currCodeLine; // one original source code line can be described by a few preprocessed lines
 
     foreach(line; file.byLine(Yes.keepTerminator))
     {
+        preprFileLineNum++;
+
         const isLineDescr = line.isLineDescr();
         bool nextLineIsSameOriginalLine;
 
@@ -252,7 +256,7 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
             else
             {
                 // Store previous
-                result.store(preprFileName, currentCodeFile, currentLineNum, currCodeLine);
+                result.store(preprFileName, preprFileLineNum+1, currentCodeFile, currentLineNum, currCodeLine);
 
                 // Prepare to new
                 currCodeLine.length = 0;
