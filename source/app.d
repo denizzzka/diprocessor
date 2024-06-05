@@ -69,14 +69,14 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(string filename, size_t lineNum, string[] codeline)
+    void store(string codeFileName, size_t lineNum, string[] codeline)
     {
-        size_t* fileIdxPtr = (filename in codeFilesIndex);
+        size_t* fileIdxPtr = (codeFileName in codeFilesIndex);
         size_t fileIdx;
 
         if(fileIdxPtr is null)
         {
-            CodeFile newFile = {filename: filename};
+            CodeFile newFile = {filename: codeFileName};
             fileIdx = codeFiles.length;
             codeFilesIndex[newFile.filename] = fileIdx;
             codeFiles ~= newFile;
@@ -199,8 +199,8 @@ void processFile(F)(in CliOptions options, F file)
 {
     import std.typecons: Yes;
 
-    string currentCodeFile;
-    size_t currentLineNum; // original source line number (.h file usually)
+    string currentCodeFile; // original source (.h file usually)
+    size_t currentLineNum; // original source line number (number inside of .h file)
     string[] currCodeLine; // one original source code line can be described by a few preprocessed lines
 
     foreach(line; file.byLine(Yes.keepTerminator))
