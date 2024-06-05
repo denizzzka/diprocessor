@@ -4,10 +4,69 @@ struct CodeBlock
     string[] code;
 }
 
+struct CodeLine
+{
+    size_t lineNum;
+    string code;
+}
+
+import std.container: DList;
+import std.exception: enforce;
+import std.conv: to;
+
+struct CodeFile
+{
+    CodeLine[] list;
+
+    private static bool byLineNum(ref CodeLine a, ref CodeLine b)
+    {
+        return a.lineNum < b.lineNum;
+    }
+
+    void addLine(size_t num, string code)
+    {
+        import std.range: assumeSorted;
+        import std.algorithm.sorting;
+        import std.array: insertInPlace;
+
+        auto sortedList = assumeSorted!byLineNum(list);
+
+        CodeLine cl = {lineNum: num, code: code};
+        auto searchResults = sortedList.trisect(cl);
+
+        if(searchResults[1].length != 0)
+        {
+            assert(searchResults[1].length == 1, "Many code lines with same line number: "~num.to!string~", line: "~code);
+            enforce(searchResults[1][0].code == code, "Different code lines with same line number:\n"~searchResults[1][0].code~"\n"~code);
+
+            // Nothing to do: line already stored
+            return;
+        }
+
+        // Adding line
+        list.insertInPlace(searchResults[0].length, cl);
+    }
+}
+
+unittest
+{
+    CodeFile cf;
+
+    cf.addLine(3, "abc");
+    assert(cf.list.length == 1);
+    assert(cf.list[0] == CodeLine(3, "abc"));
+
+    cf.addLine(2, "def");
+    assert(cf.list.length == 2);
+    assert(cf.list[0] == CodeLine(2, "def"));
+
+    cf.addLine(8, "xyz");
+    assert(cf.list.length == 3);
+    assert(cf.list[2] == CodeLine(8, "xyz"));
+}
+
 struct Storage
 {
-    import std.container: DList;
-
     static bool[string] storageIndexArray;
     DList!CodeBlock list;
     alias list this;
@@ -66,7 +125,6 @@ private DecodedLinemarker decodeLinemarker(in char[] line)
     ret.sysHeader = flags.canFind("3");
     ret.externCode = flags.canFind("4");
 
-    import std.exception: enforce;
     enforce(!(ret.startOfFile && ret.returningToFile), "malformed linemarker: "~line);
 
     //~ import std.stdio;
