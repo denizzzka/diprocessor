@@ -29,6 +29,55 @@ private bool isLineDescr(in char[] line)
     return line.length > 1 && line[0] == '#' && line[1] == ' ';
 }
 
+struct DecodedLinemarker
+{
+    bool isLinemarker;
+    size_t lineNum;
+    string filename;
+    bool startOfFile;
+    bool returningToFile;
+    bool sysHeader;
+    bool externCode;
+}
+
+private DecodedLinemarker decodeLinemarker(in char[] line)
+{
+    assert(line.isLineDescr);
+
+    DecodedLinemarker ret;
+
+    import std.string: chomp;
+    import std.algorithm.searching;
+    import std.algorithm.iteration: splitter;
+    import std.conv: to;
+
+    const numAndNext = findSplit(line[2 .. $].chomp, " ");
+
+    ret.lineNum = numAndNext[0].to!size_t;
+
+    //TODO: support quote escaping for filenames
+    const filenameAndNext = numAndNext[2][1 .. $].findSplit(`"`); // begin quote symbol skip
+    ret.filename = filenameAndNext[0].idup;
+
+    // Flags processing
+    auto flags = filenameAndNext[2].splitter(' ');
+    ret.startOfFile = flags.canFind("1");
+    ret.returningToFile = flags.canFind("2");
+    ret.sysHeader = flags.canFind("3");
+    ret.externCode = flags.canFind("4");
+
+    import std.exception: enforce;
+    enforce(!(ret.startOfFile && ret.returningToFile), "malformed linemarker: "~line);
+
+    //~ import std.stdio;
+    //~ writeln("LINE: ", line);
+    //~ writeln(">>> ", ret);
+    //~ writeln("flags: ", flags);
+    //~ assert(!ret.externCode);
+
+    return ret;
+}
+
 private string getRepeatablePartOfDescr(in char[] line)
 {
     int quotesFound;
@@ -111,6 +160,8 @@ void processFile(F)(in CliOptions options, F file)
 
         if(isLineDescr)
         {
+            decodeLinemarker(line);
+
             if(options.suppress_refs)
                 continue;
 
