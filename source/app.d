@@ -2,6 +2,7 @@ struct CodeLine
 {
     size_t lineNum;
     string code;
+    string addedfromPreprFile;
 }
 
 import std.container: DList;
@@ -18,7 +19,7 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    void addLine(size_t num, string code)
+    void addLine(string preprFile, size_t num, string code)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
@@ -26,10 +27,19 @@ struct CodeFile
 
         auto sortedList = assumeSorted!byLineNum(list);
 
-        CodeLine cl = {lineNum: num, code: code};
-        auto upperPart = sortedList.upperBound(cl);
+        CodeLine cl = {lineNum: num, code: code, addedfromPreprFile: preprFile};
+        auto found = sortedList.trisect(cl);
 
-        const idx = sortedList.length - upperPart.length;
+        if(found[1].length)
+        {
+            import std.algorithm.searching;
+
+            assert(found[1].count(found[1][0]) == found[1].length, "found line pieces from a different preprocessed files: "~found[1].to!string);
+
+            canFind
+        }
+
+        const idx = found[0].length + found[1].length;
 
         // Adding line
         list.insertInPlace(idx, cl);
@@ -40,21 +50,25 @@ unittest
 {
     CodeFile cf;
 
-    cf.addLine(3, "abc");
+    cf.addLine("1.h", 3, "abc");
     assert(cf.list.length == 1);
-    assert(cf.list[0] == CodeLine(3, "abc"));
+    assert(cf.list[0] == CodeLine(3, "abc", "1.h"), cf.list.to!string);
 
-    cf.addLine(2, "def");
+    cf.addLine("1.h", 2, "def");
     assert(cf.list.length == 2);
-    assert(cf.list[0] == CodeLine(2, "def"));
+    assert(cf.list[0] == CodeLine(2, "def", "1.h"));
 
-    cf.addLine(8, "xyz");
+    cf.addLine("1.h", 8, "xyz");
     assert(cf.list.length == 3);
-    assert(cf.list[2] == CodeLine(8, "xyz"));
+    assert(cf.list[2] == CodeLine(8, "xyz", "1.h"));
 
-    cf.addLine(3, "+abc");
+    cf.addLine("1.h", 3, "+abc");
     assert(cf.list.length == 4);
-    assert(cf.list[2] == CodeLine(3, "+abc"), cf.list.to!string);
+    assert(cf.list[2] == CodeLine(3, "+abc", "1.h"), cf.list.to!string);
+
+    cf.addLine("2.h", 3, "xyz");
+    assert(cf.list.length == 5);
+    assert(cf.list[2] == CodeLine(8, "xyz"), cf.list.to!string);
 }
 
 struct Storage
@@ -63,7 +77,7 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(string filename, size_t lineNum, string codeline)
+    void store(string preprFileName, string filename, size_t lineNum, string codeline)
     {
         size_t* fileIdxPtr = (filename in codeFilesIndex);
         size_t fileIdx;
@@ -78,7 +92,7 @@ struct Storage
         else
             fileIdx = *fileIdxPtr;
 
-        codeFiles[fileIdx].addLine(lineNum, codeline);
+        codeFiles[fileIdx].addLine(preprFileName, lineNum, codeline);
     }
 }
 
@@ -173,9 +187,11 @@ void main(string[] args)
 
     while((filename = stdin.readln) !is null)
     {
-        auto file = File(filename.chomp);
+        const fname = filename.chomp;
 
-        processFile(options, file);
+        auto file = File(fname);
+
+        processFile(options, file, fname);
     }
 
     //~ auto store_file = File("result.i", "w");
@@ -188,7 +204,7 @@ void main(string[] args)
 
 Storage result;
 
-void processFile(F)(in CliOptions options, F file)
+void processFile(F)(in CliOptions options, F file, string preprFileName)
 {
     import std.typecons: Yes;
 
@@ -208,7 +224,7 @@ void processFile(F)(in CliOptions options, F file)
         }
         else
         {
-            result.store(currentCodeFile, currentLineNum, line.idup);
+            result.store(preprFileName, currentCodeFile, currentLineNum, line.idup);
             currentLineNum++;
 
             //~ if(options.suppress_refs)
