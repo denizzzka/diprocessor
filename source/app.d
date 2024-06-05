@@ -45,7 +45,7 @@ struct CodeFile
             //~ if(code.canFind(found.code))
                 //~ return; // FIXME
 
-            enforce(equal(found.code, code), "different contents of the same splitten string"~
+            enforce(equal(found.code, code), "different contents of the same splitten string,\norig source: "~filename~":"~num.to!string~
                 "\n1: "~found.originPreprocessedFile~" "~found.code.to!string~
                 "\n2: "~fromPreprFile~" "~code.to!string
             );
