@@ -7,7 +7,7 @@ struct CodeBlock
 struct CodeLine
 {
     size_t lineNum;
-    string code;
+    string[] code; // one code line can be described on few lines of a preprocessed file
 }
 
 import std.container: DList;
@@ -23,7 +23,7 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    void addLine(size_t num, string code)
+    void addLine(size_t num, string[] code)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
@@ -36,8 +36,7 @@ struct CodeFile
 
         if(searchResults[1].length != 0)
         {
-            assert(searchResults[1].length == 1, "Many code lines with same line number: "~num.to!string~", line: "~code);
-            enforce(searchResults[1][0].code == code, "Different code lines with same line number:\n"~searchResults[1][0].code~"\n"~code);
+            assert(searchResults[1].length == 1, "Many code lines with same line number: "~num.to!string~", line: "~code.to!string);
 
             // Nothing to do: line already stored
             return;
@@ -52,21 +51,21 @@ unittest
 {
     CodeFile cf;
 
-    cf.addLine(3, "abc");
+    cf.addLine(3, ["abc"]);
     assert(cf.list.length == 1);
-    assert(cf.list[0] == CodeLine(3, "abc"));
+    assert(cf.list[0] == CodeLine(3, ["abc"]));
 
-    cf.addLine(2, "def");
+    cf.addLine(2, ["def"]);
     assert(cf.list.length == 2);
-    assert(cf.list[0] == CodeLine(2, "def"));
+    assert(cf.list[0] == CodeLine(2, ["def"]));
 
-    cf.addLine(8, "xyz");
+    cf.addLine(8, ["xyz"]);
     assert(cf.list.length == 3);
-    assert(cf.list[2] == CodeLine(8, "xyz"));
+    assert(cf.list[2] == CodeLine(8, ["xyz"]));
 
-    cf.addLine(3, "abc");
+    cf.addLine(3, ["abc"]);
     assert(cf.list.length == 3);
-    assert(cf.list[1] == CodeLine(3, "abc"), cf.list.to!string);
+    assert(cf.list[1] == CodeLine(3, ["abc"]), cf.list.to!string);
 }
 
 struct Storage
