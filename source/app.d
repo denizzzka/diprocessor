@@ -63,6 +63,10 @@ unittest
     cf.addLine(8, "xyz");
     assert(cf.list.length == 3);
     assert(cf.list[2] == CodeLine(8, "xyz"));
+
+    cf.addLine(3, "abc");
+    assert(cf.list.length == 3);
+    assert(cf.list[1] == CodeLine(3, "abc"), cf.list.to!string);
 }
 
 struct Storage
