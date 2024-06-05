@@ -189,7 +189,8 @@ void main(string[] args)
 
     foreach(cFile; result.codeFiles)
         foreach(cLine; cFile.list)
-            store_file.write(cLine.code);
+            foreach(physLine; cLine.code)
+                store_file.write(physLine);
 }
 
 Storage result;
@@ -199,29 +200,39 @@ void processFile(F)(in CliOptions options, F file)
     import std.typecons: Yes;
 
     string currentCodeFile;
-    size_t currentLineNum;
+    size_t currentLineNum; // original source line number (.h file usually)
+    string[] currCodeLine; // one original source code line can be described by a few preprocessed lines
 
     foreach(line; file.byLine(Yes.keepTerminator))
     {
         const isLineDescr = line.isLineDescr();
+        bool nextLineIsSameOriginalLine;
 
         if(isLineDescr)
         {
             const linemarker = decodeLinemarker(line);
 
-            currentCodeFile = linemarker.filename;
-            currentLineNum = linemarker.lineNum;
+            // Next line will be next piece of a same source line?
+            nextLineIsSameOriginalLine = (currentCodeFile == linemarker.filename && currentLineNum == linemarker.lineNum + 1);
+
+            if(nextLineIsSameOriginalLine)
+                currentLineNum--;
+            else
+            {
+                // Store previous
+                result.store(currentCodeFile, currentLineNum, currCodeLine);
+
+                // Prepare to new
+                currCodeLine.length = 0;
+                currentCodeFile = linemarker.filename;
+                currentLineNum = linemarker.lineNum;
+            }
         }
         else
         {
-            result.store(currentCodeFile, currentLineNum, [line.idup]);
+            enforce(currentLineNum != 0, "Line number zero is not possible");
+            currCodeLine ~= line.idup;
             currentLineNum++;
-
-            //~ if(options.suppress_refs)
-                //~ continue;
-
-            //~ if(options.refs_as_comments)
-                //~ current.code ~= "//";
         }
     }
 }
