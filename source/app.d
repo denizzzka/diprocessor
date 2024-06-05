@@ -1,9 +1,3 @@
-struct CodeBlock
-{
-    string repeatableDescr;
-    string[] code;
-}
-
 struct CodeLine
 {
     size_t lineNum;
@@ -16,6 +10,7 @@ import std.conv: to;
 
 struct CodeFile
 {
+    string filename;
     CodeLine[] list;
 
     private static bool byLineNum(ref CodeLine a, ref CodeLine b)
@@ -64,19 +59,26 @@ unittest
 
 struct Storage
 {
-    static bool[string] storageIndexArray;
-    DList!CodeBlock list;
-    alias list this;
+    CodeFile[] codeFiles;
+    static size_t[string] codeFilesIndex;
 
-    // Store if not empty and not was added previously
-    void store(ref CodeBlock c)
+    // Store codeline if it not was added previously
+    void store(string filename, size_t lineNum, string codeline)
     {
-        //TODO: add better check for different blocks with same repeatableDescr
-        if(c.repeatableDescr != "" && (c.repeatableDescr in storageIndexArray) is null)
+        size_t* fileIdxPtr = (filename in codeFilesIndex);
+        size_t fileIdx;
+
+        if(fileIdxPtr is null)
         {
-            list.insertBack(c);
-            storageIndexArray[c.repeatableDescr] = true;
+            CodeFile newFile = {filename: filename};
+            fileIdx = codeFiles.length;
+            codeFilesIndex[newFile.filename] = fileIdx;
+            codeFiles ~= newFile;
         }
+        else
+            fileIdx = *fileIdxPtr;
+
+        codeFiles[fileIdx].addLine(lineNum, codeline);
     }
 }
 
@@ -123,12 +125,6 @@ private DecodedLinemarker decodeLinemarker(in char[] line)
     ret.externCode = flags.canFind("4");
 
     enforce(!(ret.startOfFile && ret.returningToFile), "malformed linemarker: "~line);
-
-    //~ import std.stdio;
-    //~ writeln("LINE: ", line);
-    //~ writeln(">>> ", ret);
-    //~ writeln("flags: ", flags);
-    //~ assert(!ret.externCode);
 
     return ret;
 }
@@ -185,9 +181,9 @@ void main(string[] args)
     //~ auto store_file = File("result.i", "w");
     auto store_file = stdout;
 
-    foreach(elem; result)
-        foreach(s; elem.code)
-            store_file.write(s);
+    foreach(cFile; result.codeFiles)
+        foreach(cLine; cFile.list)
+            store_file.write(cLine.code);
 }
 
 Storage result;
@@ -196,37 +192,30 @@ void processFile(F)(in CliOptions options, F file)
 {
     import std.typecons: Yes;
 
-    CodeBlock current;
+    string currentCodeFile;
+    size_t currentLineNum;
 
     foreach(line; file.byLine(Yes.keepTerminator))
     {
         const isLineDescr = line.isLineDescr();
-        string repeatableDescr;
-
-        // Started new block?
-        if(isLineDescr && ((repeatableDescr = getRepeatablePartOfDescr(line)) != current.repeatableDescr))
-        {
-            // Store previous block
-            result.store(current);
-
-            // Create new block
-            current = CodeBlock(repeatableDescr);
-        }
 
         if(isLineDescr)
         {
-            decodeLinemarker(line);
+            const linemarker = decodeLinemarker(line);
 
-            if(options.suppress_refs)
-                continue;
-
-            if(options.refs_as_comments)
-                current.code ~= "//";
+            currentCodeFile = linemarker.filename;
+            currentLineNum = linemarker.lineNum;
         }
+        else
+        {
+            result.store(currentCodeFile, currentLineNum, line.idup);
+            currentLineNum++;
 
-        current.code ~= line.idup;
+            //~ if(options.suppress_refs)
+                //~ continue;
+
+            //~ if(options.refs_as_comments)
+                //~ current.code ~= "//";
+        }
     }
-
-    // Store latest
-    result.store(current);
 }
