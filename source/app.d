@@ -81,21 +81,21 @@ unittest
 {
     CodeFile cf;
 
-    cf.addLine(3, ["abc"], "1.h", 111);
+    cf.addLine(3, ["abc"], FileLineRef(filename: "1.h", lineNum: 111));
     assert(cf.list.length == 1);
-    assert(cf.list[0] == CodeLine("1.h", 111, 3, ["abc"]));
+    assert(cf.list[0] == CodeLine(FileLineRef(filename: "1.h", lineNum: 111), 3, ["abc"]));
 
-    cf.addLine(2, ["def"], "1.h", 222);
+    cf.addLine(2, ["def"], FileLineRef(filename: "1.h", lineNum: 222));
     assert(cf.list.length == 2);
-    assert(cf.list[0] == CodeLine("1.h", 222, 2, ["def"]));
+    assert(cf.list[0] == CodeLine(FileLineRef(filename: "1.h", lineNum: 222), 2, ["def"]));
 
-    cf.addLine(8, ["xyz"], "1.h", 333);
+    cf.addLine(8, ["xyz"], FileLineRef(filename: "1.h", lineNum: 333));
     assert(cf.list.length == 3);
-    assert(cf.list[2] == CodeLine("1.h", 333, 8, ["xyz"]));
+    assert(cf.list[2] == CodeLine(FileLineRef(filename: "1.h", lineNum: 333), 8, ["xyz"]));
 
-    cf.addLine(3, ["abc"], "2.h", 444);
+    cf.addLine(3, ["abc"], FileLineRef(filename: "2.h", lineNum: 444));
     assert(cf.list.length == 3);
-    assert(cf.list[1] == CodeLine("1.h", 111, 3, ["abc"]), cf.list.to!string);
+    assert(cf.list[1] == CodeLine(FileLineRef(filename: "1.h", lineNum: 111), 3, ["abc"]), cf.list.to!string);
 }
 
 /// Removes insignificant characters to the left and right of the string
