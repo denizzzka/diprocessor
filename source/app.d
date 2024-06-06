@@ -46,7 +46,12 @@ struct CodeFile
             //~ if(code.canFind(found.code))
                 //~ return; // FIXME
 
-            enforce(equal(found.code, code), "different contents of the same splitten string in source: "~filename~":"~num.to!string~
+            import std.array: join;
+
+            const s1 = found.code.join;
+            const s2 = code.join;
+
+            enforce(equal(s1, s2), "different contents of the same splitten string in source: "~filename~":"~num.to!string~
                 "\n1: "~found.originPreprocessedFile~":"~found.originPreprocessedFileLineNum.to!string~" "~found.code.to!string~
                 "\n2: "~fromPreprFile~":"~preprFileLineNum.to!string~" "~code.to!string
             );
@@ -81,19 +86,22 @@ unittest
     assert(cf.list[1] == CodeLine("1.h", 111, 3, ["abc"]), cf.list.to!string);
 }
 
-/// Removes all insignificant characters to the left and right of the string
+/// Removes insignificant characters to the left and right of the string
 string twoSidesChomp(in char[] s) pure
 {
     static bool isInsign(T)(in T a)
     if(is(T==dchar) || is(T==char))
     {
-        return a == ' ' || a == '\t' || a == '\r' ||a == '\n';
+        return a == '\t' || a == '\r' ||a == '\n';
     }
 
     size_t from;
     for(; from < s.length; from++)
     {
-        if(!isInsign(s[from]))
+        const c = s[from];
+
+        // spaces must be removed only from beginning of line
+        if(!isInsign(c) && c != ' ')
             break;
     }
 
@@ -109,11 +117,11 @@ string twoSidesChomp(in char[] s) pure
 
 unittest
 {
-    const s = "\t a =\t 1; \r\n ";
-    assert(s.twoSidesChomp == "a =\t 1;", "\n"~s.twoSidesChomp~"|");
+    const s = "\t a =\t 1; \r\n ".twoSidesChomp;
+    assert(s == "a =\t 1; \r\n ", "\n"~s~"|");
 
     assert(` a = 1;`.twoSidesChomp == `a = 1;`);
-    assert(`a = 1; `.twoSidesChomp == `a = 1;`);
+    assert(`a = 1; `.twoSidesChomp == `a = 1; `);
     assert(`a=1;`.twoSidesChomp == `a=1;`);
 
     const tabLineRet = "\t".twoSidesChomp;
