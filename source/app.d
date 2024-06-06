@@ -49,13 +49,6 @@ struct CodeFile
 
             const found = searchResults[1][0];
 
-            // Merge new line
-            //~ if(found.code.canFind(code))
-                //~ return; // new code is subset of already stored, nothing to do
-
-            //~ if(code.canFind(found.code))
-                //~ return; // FIXME
-
             import std.array: join;
 
             const l1 = found.code.join;
