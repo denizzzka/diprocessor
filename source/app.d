@@ -293,11 +293,7 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
                 currentLineNum--;
             else
             {
-                // Store previous
-                if(currCodeLine.length)
-                    result.store(preprFileName, preprFileLineNum+1, currentCodeFile, currentLineNum, currCodeLine);
-
-                // Prepare to new
+                // Prepare to new line
                 currCodeLine.length = 0;
                 currentCodeFile = linemarker.filename;
                 currentLineNum = linemarker.lineNum;
@@ -307,10 +303,17 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
         {
             enforce(currentLineNum != 0, "Line number zero is not possible");
 
+            // Store previous line if need
+            if(!nextLineIsSameOriginalLine && currCodeLine.length)
+                result.store(preprFileName, preprFileLineNum+1, currentCodeFile, currentLineNum, currCodeLine);
+
+            // Process current line
             const pureLinePiece = line.twoSidesChomp();
 
             if(pureLinePiece.length)
                 currCodeLine ~= pureLinePiece;
+
+            nextLineIsSameOriginalLine = false;
 
             currentLineNum++;
         }
