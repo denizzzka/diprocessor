@@ -175,8 +175,7 @@ private bool isLineDescr(in char[] line)
 struct DecodedLinemarker
 {
     bool isLinemarker;
-    size_t lineNum;
-    string filename;
+    FileLineRef fileRef;
     bool startOfFile;
     bool returningToFile;
     bool sysHeader;
@@ -196,11 +195,11 @@ private DecodedLinemarker decodeLinemarker(in char[] line)
 
     const numAndNext = findSplit(line[2 .. $].chomp, " ");
 
-    ret.lineNum = numAndNext[0].to!size_t;
+    ret.fileRef.lineNum = numAndNext[0].to!size_t;
 
     //TODO: support quote escaping for filenames
     const filenameAndNext = numAndNext[2][1 .. $].findSplit(`"`); // begin quote symbol skip
-    ret.filename = filenameAndNext[0].idup;
+    ret.fileRef.filename = filenameAndNext[0].idup;
 
     // Flags processing
     auto flags = filenameAndNext[2].splitter(' ');
@@ -296,7 +295,7 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
             const linemarker = decodeLinemarker(line);
 
             // Next line will be next piece of a same source line?
-            nextLineIsSameOriginalLine = (currCodeLineRef.filename == linemarker.filename && currCodeLineRef.lineNum == linemarker.lineNum + 1);
+            nextLineIsSameOriginalLine = (currCodeLineRef.filename == linemarker.fileRef.filename && currCodeLineRef.lineNum == linemarker.fileRef.lineNum + 1);
 
             if(nextLineIsSameOriginalLine)
                 currCodeLineRef.lineNum--;
@@ -304,8 +303,7 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
             {
                 // Prepare to new line
                 currCodeLine.length = 0;
-                currCodeLineRef.filename = linemarker.filename;
-                currCodeLineRef.lineNum = linemarker.lineNum;
+                currCodeLineRef = linemarker.fileRef;
             }
         }
         else
