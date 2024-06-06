@@ -148,14 +148,14 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(in FileLineRef preprocessedLineRef, string codeFileName, size_t lineNum, string[] codeline)
+    void store(in FileLineRef preprocessedLineRef, in FileLineRef codeLineRef, string[] codeline)
     {
-        size_t* fileIdxPtr = (codeFileName in codeFilesIndex);
+        size_t* fileIdxPtr = (codeLineRef.filename in codeFilesIndex);
         size_t fileIdx;
 
         if(fileIdxPtr is null)
         {
-            CodeFile newFile = {filename: codeFileName};
+            CodeFile newFile = {filename: codeLineRef.filename};
             fileIdx = codeFiles.length;
             codeFilesIndex[newFile.filename] = fileIdx;
             codeFiles ~= newFile;
@@ -163,7 +163,7 @@ struct Storage
         else
             fileIdx = *fileIdxPtr;
 
-        codeFiles[fileIdx].addLine(lineNum, codeline, preprocessedLineRef);
+        codeFiles[fileIdx].addLine(codeLineRef.num, codeline, preprocessedLineRef);
     }
 }
 
@@ -281,9 +281,8 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
     import std.typecons: Yes;
 
     size_t preprFileLineNum;
-    string currentCodeFile; // original source (.h file usually)
-    size_t currentLineNum; // original source line number (number inside of .h file)
-    string[] currCodeLine; // one original source code line can be described by a few preprocessed lines
+    FileLineRef currCodeLineRef; // original source line reference (to .h file usually)
+    string[] currCodeLine; // one original source code line can be represented by a few preprocessed lines
 
     foreach(line; file.byLine(Yes.keepTerminator))
     {
@@ -297,28 +296,28 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
             const linemarker = decodeLinemarker(line);
 
             // Next line will be next piece of a same source line?
-            nextLineIsSameOriginalLine = (currentCodeFile == linemarker.filename && currentLineNum == linemarker.lineNum + 1);
+            nextLineIsSameOriginalLine = (currCodeLineRef.filename == linemarker.filename && currCodeLineRef.num == linemarker.lineNum + 1);
 
             if(nextLineIsSameOriginalLine)
-                currentLineNum--;
+                currCodeLineRef.num--;
             else
             {
                 // Prepare to new line
                 currCodeLine.length = 0;
-                currentCodeFile = linemarker.filename;
-                currentLineNum = linemarker.lineNum;
+                currCodeLineRef.filename = linemarker.filename;
+                currCodeLineRef.num = linemarker.lineNum;
             }
         }
         else
         {
-            enforce(currentLineNum != 0, "Line number zero is not possible");
+            enforce(currCodeLineRef.num != 0, "Line number zero is not possible");
 
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && currCodeLine.length)
             {
                 FileLineRef preprFileLine = {filename: preprFileName, num: preprFileLineNum+1};
 
-                result.store(preprFileLine, currentCodeFile, currentLineNum, currCodeLine);
+                result.store(preprFileLine, currCodeLineRef, currCodeLine);
             }
 
             // Process current line
@@ -329,7 +328,7 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
 
             nextLineIsSameOriginalLine = false;
 
-            currentLineNum++;
+            currCodeLineRef.num++;
         }
     }
 }
