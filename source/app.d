@@ -81,53 +81,45 @@ unittest
     assert(cf.list[1] == CodeLine("1.h", 111, 3, ["abc"]), cf.list.to!string);
 }
 
-static bool containsOnlyInsignChars(in char[] s)
-{
-    import std.algorithm;
-
-    return s.all!`a == ' ' || a == '\t' || a == '\r' ||a == '\n'`;
-}
-
-unittest
-{
-    assert(!containsOnlyInsignChars("\ta b c"));
-    assert(containsOnlyInsignChars("\n\t\r"));
-}
-
 /// Removes all insignificant characters to the left and right of the string
 string twoSidesChomp(in char[] s) pure
 {
-    static bool isNotInsign(T)(in T a)
+    static bool isInsign(T)(in T a)
     if(is(T==dchar) || is(T==char))
     {
-        return !(a == ' ' || a == '\t' || a == '\r' ||a == '\n');
+        return a == ' ' || a == '\t' || a == '\r' ||a == '\n';
     }
 
-    import std.algorithm.searching;
-
-    size_t fromIdx = s.countUntil!isNotInsign();
-    if(fromIdx < 0)
-        fromIdx = 0;
-
-    size_t toIdx;
-    foreach_reverse(i, c; s[fromIdx..$])
+    size_t from;
+    for(; from < s.length; from++)
     {
-        toIdx = i;
-
-        if(isNotInsign(c))
+        if(!isInsign(s[from]))
             break;
     }
 
-    return s[fromIdx .. fromIdx+toIdx+1].idup;
+    size_t to;
+    for(to = s.length; to > from; to--)
+    {
+        if(!isInsign(s[to-1]))
+            break;
+    }
+
+    return s[from..to].idup;
 }
 
 unittest
 {
     const s = "\t a =\t 1; \r\n ";
-    assert(s.twoSidesChomp == "a =\t 1;", "\n"~s.twoSidesChomp);
+    assert(s.twoSidesChomp == "a =\t 1;", "\n"~s.twoSidesChomp~"|");
 
     assert(` a = 1;`.twoSidesChomp == `a = 1;`);
     assert(`a = 1; `.twoSidesChomp == `a = 1;`);
+    assert(`a=1;`.twoSidesChomp == `a=1;`);
+
+    const tabLineRet = "\t".twoSidesChomp;
+    assert(tabLineRet == null, "\n"~tabLineRet~"|");
+
+    assert(``.twoSidesChomp == ``);
 }
 
 struct Storage
@@ -305,11 +297,10 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
         {
             enforce(currentLineNum != 0, "Line number zero is not possible");
 
-            // Ignore lines containing only insignificant characters.
-            // Compilers sometimes put them  in a meaningless way,
-            // thereby complicating the analysis.
-            if(!line.containsOnlyInsignChars)
-                currCodeLine ~= line.idup;
+            const pureLinePiece = line.twoSidesChomp();
+
+            if(pureLinePiece.length)
+                currCodeLine ~= pureLinePiece;
 
             currentLineNum++;
         }
