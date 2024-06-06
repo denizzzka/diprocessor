@@ -1,7 +1,17 @@
+struct FileLineRef
+{
+    string filename;
+    size_t num;
+
+    string toString() const
+    {
+        return filename~":"~num.to!string;
+    }
+}
+
 struct CodeLine
 {
-    string originPreprocessedFile;
-    size_t originPreprocessedFileLineNum;
+    FileLineRef preprocessedLineRef;
     size_t lineNum;
     string[] code; // one code line can be described on few lines of a preprocessed file
 }
@@ -20,7 +30,7 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    void addLine(size_t num, string[] code, in string fromPreprFile, in size_t preprFileLineNum)
+    void addLine(size_t num, string[] code, in FileLineRef preprocessedLineRef)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
@@ -30,7 +40,7 @@ struct CodeFile
 
         auto sortedList = assumeSorted!byLineNum(list);
 
-        CodeLine cl = {lineNum: num, code: code, originPreprocessedFile: fromPreprFile, originPreprocessedFileLineNum: preprFileLineNum};
+        CodeLine cl = {lineNum: num, code: code, preprocessedLineRef: preprocessedLineRef};
         auto searchResults = sortedList.trisect(cl);
 
         if(searchResults[1].length != 0)
@@ -52,8 +62,8 @@ struct CodeFile
             const l2 = code.join;
 
             enforce(equal(l1, l2), "different contents of the same splitten string in source: "~filename~":"~num.to!string~
-                "\n1: "~found.originPreprocessedFile~":"~found.originPreprocessedFileLineNum.to!string~
-                "\n2: "~fromPreprFile~":"~preprFileLineNum.to!string~
+                "\n1: "~found.preprocessedLineRef.toString~
+                "\n2: "~preprocessedLineRef.toString~
                 "\nL1:"~found.code.to!string~
                 "\nL2:"~code.to!string
             );
@@ -138,7 +148,7 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(string preprFileName, size_t preprFileLineNum, string codeFileName, size_t lineNum, string[] codeline)
+    void store(in FileLineRef preprocessedLineRef, string codeFileName, size_t lineNum, string[] codeline)
     {
         size_t* fileIdxPtr = (codeFileName in codeFilesIndex);
         size_t fileIdx;
@@ -153,7 +163,7 @@ struct Storage
         else
             fileIdx = *fileIdxPtr;
 
-        codeFiles[fileIdx].addLine(lineNum, codeline, preprFileName, preprFileLineNum);
+        codeFiles[fileIdx].addLine(lineNum, codeline, preprocessedLineRef);
     }
 }
 
@@ -305,7 +315,11 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
 
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && currCodeLine.length)
-                result.store(preprFileName, preprFileLineNum+1, currentCodeFile, currentLineNum, currCodeLine);
+            {
+                FileLineRef preprFileLine = {filename: preprFileName, num: preprFileLineNum+1};
+
+                result.store(preprFileLine, currentCodeFile, currentLineNum, currCodeLine);
+            }
 
             // Process current line
             const pureLinePiece = line.twoSidesChomp();
