@@ -1,11 +1,11 @@
 struct FileLineRef
 {
     string filename;
-    size_t num;
+    size_t lineNum;
 
     string toString() const
     {
-        return filename~":"~num.to!string;
+        return filename~":"~lineNum.to!string;
     }
 }
 
@@ -163,7 +163,7 @@ struct Storage
         else
             fileIdx = *fileIdxPtr;
 
-        codeFiles[fileIdx].addLine(codeLineRef.num, codeline, preprocessedLineRef);
+        codeFiles[fileIdx].addLine(codeLineRef.lineNum, codeline, preprocessedLineRef);
     }
 }
 
@@ -296,26 +296,26 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
             const linemarker = decodeLinemarker(line);
 
             // Next line will be next piece of a same source line?
-            nextLineIsSameOriginalLine = (currCodeLineRef.filename == linemarker.filename && currCodeLineRef.num == linemarker.lineNum + 1);
+            nextLineIsSameOriginalLine = (currCodeLineRef.filename == linemarker.filename && currCodeLineRef.lineNum == linemarker.lineNum + 1);
 
             if(nextLineIsSameOriginalLine)
-                currCodeLineRef.num--;
+                currCodeLineRef.lineNum--;
             else
             {
                 // Prepare to new line
                 currCodeLine.length = 0;
                 currCodeLineRef.filename = linemarker.filename;
-                currCodeLineRef.num = linemarker.lineNum;
+                currCodeLineRef.lineNum = linemarker.lineNum;
             }
         }
         else
         {
-            enforce(currCodeLineRef.num != 0, "Line number zero is not possible");
+            enforce(currCodeLineRef.lineNum != 0, "Line number zero is not possible");
 
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && currCodeLine.length)
             {
-                FileLineRef preprFileLine = {filename: preprFileName, num: preprFileLineNum+1};
+                FileLineRef preprFileLine = {filename: preprFileName, lineNum: preprFileLineNum+1};
 
                 result.store(preprFileLine, currCodeLineRef, currCodeLine);
             }
@@ -328,7 +328,7 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
 
             nextLineIsSameOriginalLine = false;
 
-            currCodeLineRef.num++;
+            currCodeLineRef.lineNum++;
         }
     }
 }
