@@ -54,7 +54,9 @@ struct CodeFile
             const l1 = found.code.join;
             const l2 = code.join;
 
-            enforce(equal(l1, l2), "different contents of the same splitten string in source: "~filename~":"~num.to!string~
+            enforce(equal(l1, l2), "different contents of the same "~
+                ((found.code.length > 1 || code.length > 1) ? "splitten " : "")~
+                "string in source: "~filename~":"~num.to!string~
                 "\n1: "~found.preprocessedLineRef.toString~
                 "\n2: "~preprocessedLineRef.toString~
                 "\nL1:"~found.code.to!string~
