@@ -94,6 +94,42 @@ unittest
     assert(containsOnlyInsignChars("\n\t\r"));
 }
 
+/// Removes all insignificant characters to the left and right of the string
+string twoSidesChomp(in char[] s) pure
+{
+    static bool isNotInsign(T)(in T a)
+    if(is(T==dchar) || is(T==char))
+    {
+        return !(a == ' ' || a == '\t' || a == '\r' ||a == '\n');
+    }
+
+    import std.algorithm.searching;
+
+    size_t fromIdx = s.countUntil!isNotInsign();
+    if(fromIdx < 0)
+        fromIdx = 0;
+
+    size_t toIdx;
+    foreach_reverse(i, c; s[fromIdx..$])
+    {
+        toIdx = i;
+
+        if(isNotInsign(c))
+            break;
+    }
+
+    return s[fromIdx .. fromIdx+toIdx+1].idup;
+}
+
+unittest
+{
+    const s = "\t a =\t 1; \r\n ";
+    assert(s.twoSidesChomp == "a =\t 1;", "\n"~s.twoSidesChomp);
+
+    assert(` a = 1;`.twoSidesChomp == `a = 1;`);
+    assert(`a = 1; `.twoSidesChomp == `a = 1;`);
+}
+
 struct Storage
 {
     CodeFile[] codeFiles;
@@ -256,7 +292,8 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
             else
             {
                 // Store previous
-                result.store(preprFileName, preprFileLineNum+1, currentCodeFile, currentLineNum, currCodeLine);
+                if(currCodeLine.length)
+                    result.store(preprFileName, preprFileLineNum+1, currentCodeFile, currentLineNum, currCodeLine);
 
                 // Prepare to new
                 currCodeLine.length = 0;
