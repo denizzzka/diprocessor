@@ -48,12 +48,14 @@ struct CodeFile
 
             import std.array: join;
 
-            const s1 = found.code.join;
-            const s2 = code.join;
+            const l1 = found.code.join;
+            const l2 = code.join;
 
-            enforce(equal(s1, s2), "different contents of the same splitten string in source: "~filename~":"~num.to!string~
-                "\n1: "~found.originPreprocessedFile~":"~found.originPreprocessedFileLineNum.to!string~" "~found.code.to!string~
-                "\n2: "~fromPreprFile~":"~preprFileLineNum.to!string~" "~code.to!string
+            enforce(equal(l1, l2), "different contents of the same splitten string in source: "~filename~":"~num.to!string~
+                "\n1: "~found.originPreprocessedFile~":"~found.originPreprocessedFileLineNum.to!string~
+                "\n2: "~fromPreprFile~":"~preprFileLineNum.to!string~
+                "\nL1:"~found.code.to!string~
+                "\nL2:"~code.to!string
             );
 
             // Nothing to do: line already stored
