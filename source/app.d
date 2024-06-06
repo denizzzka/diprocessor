@@ -273,7 +273,7 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
 {
     import std.typecons: Yes;
 
-    size_t preprFileLineNum; //TODO: replace by FileLineRef
+    size_t preprFileLineNum;
     FileLineRef prevCodeLineRef; // original source line reference (to .h file usually)
     DecodedLinemarker linemarker;
     bool nextLineIsSameOriginalLine;
@@ -299,9 +299,7 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && currCodeLine.length)
             {
-                //FIXME: create it on top of function
-                //FIXME: line num is correct here?
-                FileLineRef preprFileLine = {filename: preprFileName, lineNum: preprFileLineNum+1};
+                FileLineRef preprFileLine = {filename: preprFileName, lineNum: preprFileLineNum};
 
                 result.store(preprFileLine, prevCodeLineRef, currCodeLine);
 
