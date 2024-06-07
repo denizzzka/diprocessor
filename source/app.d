@@ -288,14 +288,43 @@ int main(string[] args)
     bool wasIgnoredFile;
 
     foreach(cFile; result.codeFiles)
+    {
+        size_t prevCodeLineNum;
+
         if(cFile.ignoredFile)
             wasIgnoredFile = true;
         else
         {
             foreach(cLine; cFile.list)
-                foreach(physLine; cLine.code)
+            {
+                void writeLinemarker()
+                {
+                    store_file.writeln(`# `~cLine.lineNum.to!string~` "`~cFile.filename~`"`);
+                }
+
+                if(prevCodeLineNum == 0)
+                    writeLinemarker(); // first line of preprocessed file
+                else
+                {
+                    const gap = cLine.lineNum - prevCodeLineNum - 1;
+
+                    if(gap > 10)
+                        writeLinemarker();
+                    else
+                        foreach(i; 0 .. gap)
+                            store_file.writeln("");
+                }
+
+                foreach(i, physLine; cLine.code)
+                {
+                    if(i > 0) writeLinemarker(); // repeat linemarker for splitten line
                     store_file.writeln(physLine);
+                }
+
+                prevCodeLineNum = cLine.lineNum;
+            }
         }
+    }
 
     return wasIgnoredFile ? 3 : 0;
 }
