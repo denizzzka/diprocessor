@@ -299,7 +299,7 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && currCodeLine.length)
             {
-                FileLineRef preprFileLine = {filename: preprFileName, lineNum: preprFileLineNum};
+                FileLineRef preprFileLine = {filename: preprFileName, lineNum: preprFileLineNum-1};
 
                 result.store(preprFileLine, prevCodeLineRef, currCodeLine);
 
