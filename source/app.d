@@ -16,6 +16,14 @@ struct CodeLine
     string[] code; // one code line can be described on few lines of a preprocessed file
 }
 
+class SameLineDiffContentEx : Exception
+{
+    this(string msg, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(msg, file, line);
+    }
+}
+
 import std.container: DList;
 import std.exception: enforce;
 import std.conv: to;
@@ -24,6 +32,7 @@ struct CodeFile
 {
     string filename;
     CodeLine[] list;
+    bool ignoredFile;
 
     private static bool byLineNum(ref CodeLine a, ref CodeLine b)
     {
@@ -54,14 +63,19 @@ struct CodeFile
             const l1 = found.code.join;
             const l2 = code.join;
 
-            enforce(equal(l1, l2), "different contents of the same "~
-                ((found.code.length > 1 || code.length > 1) ? "splitten " : "")~
-                "string in source: "~filename~":"~num.to!string~
-                "\n1: "~found.preprocessedLineRef.toString~
-                "\n2: "~preprocessedLineRef.toString~
-                "\nL1:"~found.code.to!string~
-                "\nL2:"~code.to!string
-            );
+            if(!equal(l1, l2))
+            {
+                string msg = ("different contents of the same "~
+                    ((found.code.length > 1 || code.length > 1) ? "splitten " : "")~
+                    "line in source: "~filename~":"~num.to!string~
+                    "\n1: "~found.preprocessedLineRef.toString~
+                    "\n2: "~preprocessedLineRef.toString~
+                    "\nL1:"~found.code.to!string~
+                    "\nL2:"~code.to!string
+                );
+
+                throw new SameLineDiffContentEx(msg);
+            }
 
             // Nothing to do: line already stored
             return;
@@ -158,7 +172,17 @@ struct Storage
         else
             fileIdx = *fileIdxPtr;
 
-        codeFiles[fileIdx].addLine(codeLineRef.lineNum, codeline, preprocessedLineRef);
+        try
+            codeFiles[fileIdx].addLine(codeLineRef.lineNum, codeline, preprocessedLineRef);
+        catch(SameLineDiffContentEx e)
+        {
+            import std.stdio;
+
+            stderr.writeln(e.msg, "\nBoth files will be ignored");
+
+            codeFiles[fileIdx].ignoredFile = true;
+            throw e;
+        }
     }
 }
 
@@ -262,9 +286,10 @@ void main(string[] args)
     auto store_file = stdout;
 
     foreach(cFile; result.codeFiles)
-        foreach(cLine; cFile.list)
-            foreach(physLine; cLine.code)
-                store_file.writeln(physLine);
+        if(!cFile.ignoredFile)
+            foreach(cLine; cFile.list)
+                foreach(physLine; cLine.code)
+                    store_file.writeln(physLine);
 }
 
 Storage result;
@@ -294,6 +319,7 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
         }
         else
         {
+            //TODO: assert?
             enforce(linemarker.fileRef.lineNum != 0, "Line number zero is not possible: "~preprFileName~":"~preprFileLineNum.to!string);
 
             // Store previous line if need
@@ -301,7 +327,10 @@ void processFile(F)(in CliOptions options, F file, in string preprFileName)
             {
                 FileLineRef preprFileLine = {filename: preprFileName, lineNum: preprFileLineNum-1};
 
-                result.store(preprFileLine, prevCodeLineRef, currCodeLine);
+                try
+                    result.store(preprFileLine, prevCodeLineRef, currCodeLine);
+                catch(SameLineDiffContentEx e)
+                    return;
 
                 currCodeLine.length = 0;
             }
