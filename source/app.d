@@ -260,7 +260,7 @@ struct CliOptions
     @Arg("Suppress # 123 \"/path/to/file.h\" lines") bool suppress_refs;
 }
 
-void main(string[] args)
+int main(string[] args)
 {
     import args: parseArgsWithConfigFile;
 
@@ -285,11 +285,19 @@ void main(string[] args)
     //~ auto store_file = File("result.i", "w");
     auto store_file = stdout;
 
+    bool wasIgnoredFile;
+
     foreach(cFile; result.codeFiles)
-        if(!cFile.ignoredFile)
+        if(cFile.ignoredFile)
+            wasIgnoredFile = true;
+        else
+        {
             foreach(cLine; cFile.list)
                 foreach(physLine; cLine.code)
                     store_file.writeln(physLine);
+        }
+
+    return wasIgnoredFile ? 3 : 0;
 }
 
 Storage result;
