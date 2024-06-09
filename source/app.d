@@ -343,6 +343,7 @@ void processFile(F)(F file, in string preprFileName)
     import std.typecons: Yes;
 
     size_t preprFileLineNum;
+    size_t prevPreprFileRealCodeLineNum;
     FileLineRef prevCodeLineRef; // original source line reference (to .h file usually)
     DecodedLinemarker linemarker;
     bool nextLineIsSameOriginalLine;
@@ -369,7 +370,7 @@ void processFile(F)(F file, in string preprFileName)
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && currCodeLine.length)
             {
-                FileLineRef preprFileLine = {filename: preprFileName, lineNum: preprFileLineNum-1};
+                FileLineRef preprFileLine = {filename: preprFileName, lineNum: prevPreprFileRealCodeLineNum};
 
                 try
                     result.store(preprFileLine, prevCodeLineRef, currCodeLine);
@@ -388,13 +389,15 @@ void processFile(F)(F file, in string preprFileName)
             prevCodeLineRef = linemarker.fileRef;
             nextLineIsSameOriginalLine = false;
 
+            prevPreprFileRealCodeLineNum = preprFileLineNum;
+
             linemarker.fileRef.lineNum++;
         }
     }
 
     // Store latest code line
     //FIXME: code duplication
-    FileLineRef preprFileLine = {filename: preprFileName, lineNum: preprFileLineNum-1};
+    FileLineRef preprFileLine = {filename: preprFileName, lineNum: prevPreprFileRealCodeLineNum};
 
     try
         result.store(preprFileLine, prevCodeLineRef, currCodeLine);
