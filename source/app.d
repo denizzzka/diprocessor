@@ -274,7 +274,8 @@ int main(string[] args)
 
         if (helpInformation.helpWanted)
         {
-            defaultGetoptPrinter("Some information about the program.",
+            defaultGetoptPrinter(`Usage: `~args[0]~" [PARAMETER]...\n"~
+                `Takes a list of preprocessed C, C++ or Objective C files from STDIN and returns joint preprocessed file to STDOUT`,
                 helpInformation.options);
 
             return 0;
