@@ -387,4 +387,13 @@ void processFile(F)(F file, in string preprFileName)
             linemarker.fileRef.lineNum++;
         }
     }
+
+    // Store latest code line
+    //FIXME: code duplication
+    FileLineRef preprFileLine = {filename: preprFileName, lineNum: preprFileLineNum-1};
+
+    try
+        result.store(preprFileLine, prevCodeLineRef, currCodeLine);
+    catch(SameLineDiffContentEx e)
+        return;
 }
