@@ -363,8 +363,8 @@ void processFile(F)(F file, in string preprFileName)
 
     size_t preprFileLineNum;
     size_t prevPreprFileRealCodeLineNum;
-    FileLineRef prevCodeLineRef; // original source line reference (to .h file usually)
     DecodedLinemarker linemarker;
+    DecodedLinemarker prevLinemarker;
     bool nextLineIsSameOriginalLine;
     string[] currCodeLine; // one original source code line can be represented by a few preprocessed lines
 
@@ -379,7 +379,7 @@ void processFile(F)(F file, in string preprFileName)
             linemarker = decodeLinemarker(line);
 
             // Next line will be next piece of a same source line?
-            nextLineIsSameOriginalLine = (prevCodeLineRef == linemarker.fileRef);
+            nextLineIsSameOriginalLine = (prevLinemarker.fileRef == linemarker.fileRef);
         }
         else
         {
@@ -392,7 +392,7 @@ void processFile(F)(F file, in string preprFileName)
                 FileLineRef preprFileLine = {filename: preprFileName, lineNum: prevPreprFileRealCodeLineNum};
 
                 try
-                    result.store(preprFileLine, prevCodeLineRef, currCodeLine);
+                    result.store(preprFileLine, prevLinemarker.fileRef, currCodeLine);
                 catch(SameLineDiffContentEx e)
                     return;
 
@@ -405,7 +405,7 @@ void processFile(F)(F file, in string preprFileName)
             if(pureLinePiece.length)
                 currCodeLine ~= pureLinePiece;
 
-            prevCodeLineRef = linemarker.fileRef;
+            prevLinemarker = linemarker;
             nextLineIsSameOriginalLine = false;
 
             prevPreprFileRealCodeLineNum = preprFileLineNum;
@@ -419,7 +419,7 @@ void processFile(F)(F file, in string preprFileName)
     FileLineRef preprFileLine = {filename: preprFileName, lineNum: prevPreprFileRealCodeLineNum};
 
     try
-        result.store(preprFileLine, prevCodeLineRef, currCodeLine);
+        result.store(preprFileLine, prevLinemarker.fileRef, currCodeLine);
     catch(SameLineDiffContentEx e)
         return;
 }
