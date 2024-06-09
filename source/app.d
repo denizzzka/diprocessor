@@ -279,7 +279,7 @@ int main(string[] args)
 
         auto file = File(fname);
 
-        processFile(options, file, fname);
+        processFile(file, fname);
     }
 
     //~ auto store_file = File("result.i", "w");
@@ -299,7 +299,10 @@ int main(string[] args)
             {
                 void writeLinemarker()
                 {
-                    store_file.writeln(`# `~cLine.lineNum.to!string~` "`~cFile.filename~`"`);
+                    if(!options.suppress_refs)
+                    {
+                        store_file.writeln((options.refs_as_comments ? `// ` : `# `)~cLine.lineNum.to!string~` "`~cFile.filename~`"`);
+                    }
                 }
 
                 if(prevCodeLineNum == 0)
@@ -331,7 +334,7 @@ int main(string[] args)
 
 Storage result;
 
-void processFile(F)(in CliOptions options, F file, in string preprFileName)
+void processFile(F)(F file, in string preprFileName)
 {
     import std.typecons: Yes;
 
