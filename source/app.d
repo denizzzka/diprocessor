@@ -32,6 +32,7 @@ struct CodeFile
 {
     string filename;
     CodeLine[] list;
+    bool sysCode;
     bool ignoredFile;
 
     private static bool byLineNum(ref CodeLine a, ref CodeLine b)
@@ -157,7 +158,7 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(in FileLineRef preprocessedLineRef, in FileLineRef codeLineRef, string[] codeline)
+    void store(in FileLineRef preprocessedLineRef, in FileLineRef codeLineRef, string[] codeline, in bool isSysHeader)
     {
         size_t* fileIdxPtr = (codeLineRef.filename in codeFilesIndex);
         size_t fileIdx;
@@ -183,6 +184,9 @@ struct Storage
             codeFiles[fileIdx].ignoredFile = true;
             throw e;
         }
+
+        if(isSysHeader)
+            codeFiles[fileIdx].sysCode = true;
     }
 }
 
@@ -296,12 +300,11 @@ int main(string[] args)
         processFile(file, fname);
     }
 
-    //~ auto store_file = File("result.i", "w");
     auto store_file = stdout;
 
     bool wasIgnoredFile;
 
-    foreach(cFile; result.codeFiles)
+    void writeFile(in CodeFile cFile)
     {
         size_t prevCodeLineNum;
 
@@ -309,8 +312,13 @@ int main(string[] args)
             wasIgnoredFile = true;
         else
         {
+            void writeBeginEnd(bool isBegin)
+            {
+                store_file.writeln(`// `~(isBegin ? `BEGIN` : `END`)~` `~(cFile.sysCode ? `SYS ` : ``)~`code file: `~cFile.filename);
+            }
+
             if(options.prepr_refs_comments)
-                store_file.writeln(`// BEGIN code file: `~cFile.filename);
+                writeBeginEnd(true);
 
             foreach(cLine; cFile.list)
             {
@@ -348,9 +356,18 @@ int main(string[] args)
             }
 
             if(options.prepr_refs_comments)
-                store_file.writeln(`// END code file: `~cFile.filename);
+                writeBeginEnd(false);
         }
     }
+
+    // Sys code at first stage
+    foreach(ref cFile; result.codeFiles)
+        if(cFile.sysCode)
+            writeFile(cFile);
+
+    foreach(ref cFile; result.codeFiles)
+        if(!cFile.sysCode)
+            writeFile(cFile);
 
     return wasIgnoredFile ? 3 : 0;
 }
@@ -363,8 +380,8 @@ void processFile(F)(F file, in string preprFileName)
 
     size_t preprFileLineNum;
     size_t prevPreprFileRealCodeLineNum;
-    FileLineRef prevCodeLineRef; // original source line reference (to .h file usually)
     DecodedLinemarker linemarker;
+    DecodedLinemarker prevLinemarker;
     bool nextLineIsSameOriginalLine;
     string[] currCodeLine; // one original source code line can be represented by a few preprocessed lines
 
@@ -379,10 +396,11 @@ void processFile(F)(F file, in string preprFileName)
             linemarker = decodeLinemarker(line);
 
             // Next line will be next piece of a same source line?
-            nextLineIsSameOriginalLine = (prevCodeLineRef == linemarker.fileRef);
+            nextLineIsSameOriginalLine = (prevLinemarker.fileRef == linemarker.fileRef);
         }
         else
         {
+            //~ assert(!linemarker.sysHeader, linemarker.to!string);
             //TODO: assert?
             enforce(linemarker.fileRef.lineNum != 0, "Line number zero is not possible: "~preprFileName~":"~preprFileLineNum.to!string);
 
@@ -392,7 +410,7 @@ void processFile(F)(F file, in string preprFileName)
                 FileLineRef preprFileLine = {filename: preprFileName, lineNum: prevPreprFileRealCodeLineNum};
 
                 try
-                    result.store(preprFileLine, prevCodeLineRef, currCodeLine);
+                    result.store(preprFileLine, prevLinemarker.fileRef, currCodeLine, prevLinemarker.sysHeader);
                 catch(SameLineDiffContentEx e)
                     return;
 
@@ -405,7 +423,7 @@ void processFile(F)(F file, in string preprFileName)
             if(pureLinePiece.length)
                 currCodeLine ~= pureLinePiece;
 
-            prevCodeLineRef = linemarker.fileRef;
+            prevLinemarker = linemarker;
             nextLineIsSameOriginalLine = false;
 
             prevPreprFileRealCodeLineNum = preprFileLineNum;
@@ -419,7 +437,7 @@ void processFile(F)(F file, in string preprFileName)
     FileLineRef preprFileLine = {filename: preprFileName, lineNum: prevPreprFileRealCodeLineNum};
 
     try
-        result.store(preprFileLine, prevCodeLineRef, currCodeLine);
+        result.store(preprFileLine, linemarker.fileRef, currCodeLine, linemarker.sysHeader);
     catch(SameLineDiffContentEx e)
         return;
 }
