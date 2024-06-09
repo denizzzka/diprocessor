@@ -296,6 +296,9 @@ int main(string[] args)
             wasIgnoredFile = true;
         else
         {
+            if(options.prepr_refs_comments)
+                store_file.writeln(`// BEGIN code file: `~cFile.filename);
+
             foreach(cLine; cFile.list)
             {
                 void writeLinemarker()
@@ -303,7 +306,7 @@ int main(string[] args)
                     if(!options.suppress_refs)
                     {
                         if(options.prepr_refs_comments)
-                            store_file.writeln(`//From prepr file: `~cLine.preprocessedLineRef.toString);
+                            store_file.writeln(`// From prepr file: `~cLine.preprocessedLineRef.toString);
 
                         store_file.writeln((options.refs_as_comments ? `// ` : `# `)~cLine.lineNum.to!string~` "`~cFile.filename~`"`);
                     }
@@ -330,6 +333,9 @@ int main(string[] args)
 
                 prevCodeLineNum = cLine.lineNum;
             }
+
+            if(options.prepr_refs_comments)
+                store_file.writeln(`// END code file: `~cFile.filename);
         }
     }
 
