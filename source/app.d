@@ -317,12 +317,7 @@ int main(string[] args)
                 void writeLinemarker()
                 {
                     if(!options.suppress_refs)
-                    {
-                        if(options.prepr_refs_comments)
-                            store_file.writeln(`// From prepr file: `~cLine.preprocessedLineRef.toString);
-
                         store_file.writeln((options.refs_as_comments ? `// ` : `# `)~cLine.lineNum.to!string~` "`~cFile.filename~`"`);
-                    }
                 }
 
                 if(prevCodeLineNum == 0)
@@ -337,6 +332,9 @@ int main(string[] args)
                         foreach(i; 0 .. gap)
                             store_file.writeln("");
                 }
+
+                if(options.prepr_refs_comments)
+                    store_file.writeln(`// From prepr file: `~cLine.preprocessedLineRef.toString);
 
                 foreach(i, physLine; cLine.code)
                 {
@@ -362,7 +360,7 @@ void processFile(F)(F file, in string preprFileName)
     import std.typecons: Yes;
 
     size_t preprFileLineNum;
-    size_t prevPreprFileRealCodeLineNum;
+    size_t notStoredPreprFileLineNum;
     DecodedLinemarker linemarker;
     DecodedLinemarker prevLinemarker;
     bool nextLineIsSameOriginalLine;
@@ -389,7 +387,7 @@ void processFile(F)(F file, in string preprFileName)
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && currCodeLine.length)
             {
-                FileLineRef preprFileLine = {filename: preprFileName, lineNum: prevPreprFileRealCodeLineNum};
+                FileLineRef preprFileLine = {filename: preprFileName, lineNum: notStoredPreprFileLineNum};
 
                 try
                     result.store(preprFileLine, prevLinemarker.fileRef, currCodeLine);
@@ -398,6 +396,10 @@ void processFile(F)(F file, in string preprFileName)
 
                 currCodeLine.length = 0;
             }
+
+            // Store current line piece line number in prepared file for further use
+            if(currCodeLine.length == 0)
+                notStoredPreprFileLineNum = preprFileLineNum;
 
             // Process current line
             const pureLinePiece = line.twoSidesChomp();
@@ -408,15 +410,13 @@ void processFile(F)(F file, in string preprFileName)
             prevLinemarker = linemarker;
             nextLineIsSameOriginalLine = false;
 
-            prevPreprFileRealCodeLineNum = preprFileLineNum;
-
             linemarker.fileRef.lineNum++;
         }
     }
 
     // Store latest code line
     //FIXME: code duplication
-    FileLineRef preprFileLine = {filename: preprFileName, lineNum: prevPreprFileRealCodeLineNum};
+    FileLineRef preprFileLine = {filename: preprFileName, lineNum: notStoredPreprFileLineNum};
 
     try
         result.store(preprFileLine, prevLinemarker.fileRef, currCodeLine);
