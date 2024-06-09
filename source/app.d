@@ -257,6 +257,7 @@ import args: Arg;
 struct CliOptions
 {
     @Arg("Add // before # 123 \"/path/to/file.h\" lines") bool refs_as_comments;
+    @Arg("Add comments with references to a preprocessed files") bool prepr_refs_comments;
     @Arg("Suppress # 123 \"/path/to/file.h\" lines") bool suppress_refs;
 }
 
@@ -301,6 +302,9 @@ int main(string[] args)
                 {
                     if(!options.suppress_refs)
                     {
+                        if(options.prepr_refs_comments)
+                            store_file.writeln(`//From prepr file: `~cLine.preprocessedLineRef.toString);
+
                         store_file.writeln((options.refs_as_comments ? `// ` : `# `)~cLine.lineNum.to!string~` "`~cFile.filename~`"`);
                     }
                 }
