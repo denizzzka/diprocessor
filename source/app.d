@@ -252,22 +252,34 @@ private string getRepeatablePartOfDescr(in char[] line)
     return ret;
 }
 
-import args: Arg;
-
 struct CliOptions
 {
-    @Arg("Add // before # 123 \"/path/to/file.h\" lines") bool refs_as_comments;
-    @Arg("Add comments with references to a preprocessed files") bool prepr_refs_comments;
-    @Arg("Suppress # 123 \"/path/to/file.h\" lines") bool suppress_refs;
+    bool refs_as_comments;
+    bool prepr_refs_comments;
+    bool suppress_refs;
 }
 
 int main(string[] args)
 {
-    import args: parseArgsWithConfigFile;
+    import std.getopt;
 
     CliOptions options;
-    parseArgsWithConfigFile(options, args);
-    //TODO: detect unrecognized options
+
+    {
+        auto helpInformation = getopt(args,
+            "refs_as_comments", `"Add // before # 123 "/path/to/file.h" lines"`, &options.refs_as_comments,
+            "prepr_refs_comments", `Add comment lines with references to a preprocessed files`, &options.prepr_refs_comments,
+            "suppress_refs", `Suppress # 123 "/path/to/file.h" lines`, &options.suppress_refs,
+        );
+
+        if (helpInformation.helpWanted)
+        {
+            defaultGetoptPrinter("Some information about the program.",
+                helpInformation.options);
+
+            return 0;
+        }
+    }
 
     import std.stdio: stdin, stdout, File;
     import std.string: chomp;
