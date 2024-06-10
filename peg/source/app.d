@@ -2,12 +2,15 @@ import std.stdio;
 
 void main()
 {
-    const string filename = "esp_https_ota.c";
-    auto file = File(filename);
+    import std.string: chomp;
+    import std.file;
+
+    const string filename = stdin.readln.chomp;
+    auto file = readText(filename);
     processFile(file);
 }
 
-void processFile(File file)
+void processFile(string file)
 {
     import peg_c_lib: Parser;
 
@@ -16,12 +19,41 @@ void processFile(File file)
     import std.array: join;
     import std.conv: to;
     import std.exception: enforce;
+    import std.algorithm;
 
-    auto parsed = parser.parse(file.byLine.join.to!string);
+    import pegged.grammar: ParseTree;
 
-    foreach(ref child; parsed.children)
+    auto parsed = parser.parse(file);
+    parsed.writeln;
+
+    static string[] parseToCode(ref ParseTree t)
     {
-        enforce(child.successful, "Parse error");
-        child.name.writeln;
+        static string[] loopOverAll(ref ParseTree[] ptlist, bool stripCompoundStatement = false)
+        {
+            string[] ret;
+
+            foreach(ref c; ptlist)
+                if(stripCompoundStatement && c.name == "C.CompoundStatement")
+                    ret ~= [";"];
+                else
+                    ret ~= parseToCode(c);
+
+            return ret;
+        }
+
+        switch(t.name)
+        {
+            case "C":
+            case "C.TranslationUnit":
+            case "C.ExternalDeclaration": return loopOverAll(t.children);
+            case "C.FunctionDefinition":
+                // special loop strips body of function
+                auto a = loopOverAll(t.children, true);
+                return [a.join, "\n"];
+            default: return t.matches;
+        }
     }
+
+    foreach(s; parseToCode(parsed))
+        s.write;
 }
