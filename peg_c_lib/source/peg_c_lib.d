@@ -1,4 +1,4 @@
-module peg_c;
+module peg_c_lib;
 
 struct Parser
 {

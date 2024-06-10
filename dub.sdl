@@ -4,7 +4,7 @@ authors "Denis Feklushkin"
 copyright "Copyright © 2024, Denis Feklushkin"
 license "GPL-3.0-only"
 dependency "pegged" version="~>0.4.9"
+subPackage "./peg_c_lib/"
 
 #FIXME: merge "peg" subpackage into main code
 subPackage "./peg/"
-subPackage "./peg_c_lib/"
