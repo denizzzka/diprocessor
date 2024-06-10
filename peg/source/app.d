@@ -24,7 +24,6 @@ void processFile(string file)
     import pegged.grammar: ParseTree;
 
     auto parsed = parser.parse(file);
-    parsed.writeln;
 
     static string[] parseToCode(ref ParseTree t)
     {
