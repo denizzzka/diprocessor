@@ -1,0 +1,4 @@
+name "peg_c_lib"
+dependency "pegged" version="~>0.4.9"
+stringImportPaths "imported_strings/"
+targetType "library"

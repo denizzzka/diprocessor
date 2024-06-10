@@ -9,11 +9,19 @@ void main()
 
 void processFile(File file)
 {
-    import peg_c: Parser;
+    import peg_c_lib: Parser;
 
     Parser parser;
 
-    foreach(line; file.byLine)
+    import std.array: join;
+    import std.conv: to;
+    import std.exception: enforce;
+
+    auto parsed = parser.parse(file.byLine.join.to!string);
+
+    foreach(ref child; parsed.children)
     {
+        enforce(child.successful, "Parse error");
+        child.name.writeln;
     }
 }
