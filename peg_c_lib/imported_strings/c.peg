@@ -149,13 +149,15 @@ InitDeclaratorList <- InitDeclarator (COMMA InitDeclarator)* #{}
 
 InitDeclarator <- Declarator (EQU Initializer)? #{}
 
+ATTR_FEATURE <- ATTRIBUTE LPAR LPAR InitDeclaratorList* RPAR RPAR
+
 StorageClassSpecifier
    <- TYPEDEF
     / EXTERN
     / STATIC
     / AUTO
     / REGISTER
-    / ATTRIBUTE LPAR LPAR (!RPAR .)* RPAR RPAR
+    / ATTR_FEATURE
 
 TypeSpecifier
    <- VOID
@@ -215,7 +217,7 @@ TypeQualifier
 
 FunctionSpecifier <- INLINE / STDCALL
 
-Declarator <- Pointer? DirectDeclarator #{}
+Declarator <- Pointer? DirectDeclarator ATTR_FEATURE* #{}
 
 DirectDeclarator
    <- ( Identifier
