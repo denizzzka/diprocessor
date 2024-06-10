@@ -130,6 +130,7 @@ Declaration <- DeclarationSpecifiers InitDeclaratorList? SEMI #{}
 DeclarationSpecifiers
    <- (( StorageClassSpecifier
        / TypeQualifier
+       / TypeSpecifier
        / FunctionSpecifier
        )*
        TypedefName
