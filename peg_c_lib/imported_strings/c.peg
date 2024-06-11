@@ -211,7 +211,7 @@ TypeQualifier
     / VOLATILE
     / DECLSPEC LPAR Identifier RPAR
 
-FunctionSpecifier <- INLINE / STDCALL
+FunctionSpecifier <- INLINE / STDCALL / NORETURN
 
 Declarator <- Pointer? DirectDeclarator #{}
 
@@ -460,6 +460,7 @@ COMPLEX   <- '_Complex'  !IdChar Spacing
 STDCALL   <- '_stdcall'  !IdChar Spacing
 DECLSPEC  <- '__declspec' !IdChar Spacing
 ATTRIBUTE <- '__attribute__' !IdChar Spacing
+NORETURN  <- '_Noreturn' !IdChar Spacing
 
 Keyword
    <- ( 'auto'
