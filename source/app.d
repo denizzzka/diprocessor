@@ -321,7 +321,12 @@ int main(string[] args)
                 }
 
                 if(prevCodeLineNum == 0)
+                {
+                    if(options.prepr_refs_comments)
+                        store_file.writeln(`// From prepr file: `~cLine.preprocessedLineRef.toString);
+
                     writeLinemarker(); // first line of preprocessed file
+                }
                 else
                 {
                     const gap = cLine.lineNum - prevCodeLineNum - 1;
@@ -332,9 +337,6 @@ int main(string[] args)
                         foreach(i; 0 .. gap)
                             store_file.writeln("");
                 }
-
-                if(options.prepr_refs_comments)
-                    store_file.writeln(`// From prepr file: `~cLine.preprocessedLineRef.toString);
 
                 foreach(i, physLine; cLine.code)
                 {
