@@ -29,3 +29,8 @@ char basename(const char *) __asm("" "__gnu_basename");
 
 siginfo_t sgt;
 typeof(sgt->si_signo) int_var;
+
+static inline __attribute__((always_inline)) void __attribute__((always_inline)) rv_utils_wait_for_intr(void)
+{
+  __asm ("wfi\n");
+}
