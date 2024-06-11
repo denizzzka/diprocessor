@@ -325,6 +325,8 @@ JumpStatement
 #  A.2.1  Expressions
 #-------------------------------------------------------------------------
 
+CompoundExpression <- LPAR CompoundStatement RPAR
+
 PrimaryExpression
    <- StringLiteral
     / Constant
@@ -354,6 +356,7 @@ UnaryExpression
     / DEC UnaryExpression
     / UnaryOperator CastExpression
     / SIZEOF (UnaryExpression / LPAR TypeName RPAR )
+    / CompoundExpression
 
 UnaryOperator
    <- AND

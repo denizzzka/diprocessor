@@ -41,3 +41,10 @@ static inline __attribute__((always_inline)) void *rv_utils_get_sp(void)
   __asm ("mv %0, sp;" : "=r" (sp));
   return sp;
 }
+
+uint32_t iomux_reg_val = ({ 123; });
+
+void func7(void)
+{
+  return ({ unsigned long __tmp; __tmp = 123; __tmp; });
+}
