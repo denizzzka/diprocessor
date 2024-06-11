@@ -48,3 +48,8 @@ void func7(void)
 {
   return ({ unsigned long __tmp; __tmp = 123; __tmp; });
 }
+
+void rv_utils_set_cycle_count(uint32_t ccount)
+{
+  ({ __asm ("csrw " "0x7e2" ", %0" :: "rK"(ccount)); });
+}
