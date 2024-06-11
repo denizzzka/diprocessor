@@ -34,3 +34,10 @@ static inline __attribute__((always_inline)) void __attribute__((always_inline))
 {
   __asm ("wfi\n");
 }
+
+static inline __attribute__((always_inline)) void *rv_utils_get_sp(void)
+{
+  void *sp;
+  __asm ("mv %0, sp;" : "=r" (sp));
+  return sp;
+}

@@ -112,7 +112,11 @@ ExternalDeclaration <- FunctionDefinition / Declaration
 
 FunctionDefinition <- DeclarationSpecifiers Declarator DeclarationList? (CompoundStatement / AsmStatement)
 
-AsmStatement <- ASM PostfixArgsAndBody
+AsmStatement <- ASM LPAR AsmArgs? RPAR
+
+AsmArgs <- StringLiteral+ (COLON AsmClobber)*
+
+AsmClobber <- StringLiteral (LPAR Identifier RPAR)?
 
 DeclarationList <- Declaration+
 
