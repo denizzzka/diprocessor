@@ -23,7 +23,8 @@ void processFile(in string filename)
     import std.file: readText;
     import pegged.grammar: ParseTree;
 
-    auto file = readText(filename);
+    // pegged counts lines unconventionally, from 0. That's why a newline is added here
+    auto file = newline~readText(filename);
     auto parsed = parser.parse(file);
 
     if(!parsed.successful)
@@ -34,7 +35,7 @@ void processFile(in string filename)
             {
                 import std.algorithm.searching;
 
-                const linenum = file[0 .. c.end].count("\n") + 1;
+                const linenum = file[0 .. c.end].count("\n");
                 throw new Exception(`Parse error in `~filename~`:`~linenum.to!string~newline~c.toString);
             }
     }
