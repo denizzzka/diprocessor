@@ -24,3 +24,5 @@ void *__attribute__((__nonnull__ (1))) fun4(void)
 {
   fun2();
 }
+
+char basename(const char *) __asm("" "__gnu_basename");

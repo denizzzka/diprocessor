@@ -110,7 +110,9 @@ TranslationUnit <- Spacing ( ExternalDeclaration / SEMI ) * EOT
 
 ExternalDeclaration <- FunctionDefinition / Declaration
 
-FunctionDefinition <- DeclarationSpecifiers Declarator DeclarationList? CompoundStatement
+FunctionDefinition <- DeclarationSpecifiers Declarator DeclarationList? (CompoundStatement / AsmStatement)
+
+AsmStatement <- ASM PostfixArgsAndBody
 
 DeclarationList <- Declaration+
 
@@ -325,6 +327,9 @@ PostfixExpression
    <- ( PrimaryExpression
       / LPAR TypeName RPAR LWING InitializerList COMMA? RWING
       )
+      PostfixArgsAndBody
+
+PostfixArgsAndBody <-
       ( LBRK Expression RBRK
       / LPAR ArgumentExpressionList? RPAR
       / DOT Identifier
@@ -462,6 +467,7 @@ STDCALL   <- '_stdcall'  !IdChar Spacing
 DECLSPEC  <- '__declspec' !IdChar Spacing
 ATTRIBUTE <- '__attribute__' !IdChar Spacing
 NORETURN  <- '_Noreturn' !IdChar Spacing
+ASM       <- '__asm'     !IdChar Spacing #FIXME: replace by asm
 
 Keyword
    <- ( 'auto'
@@ -505,6 +511,7 @@ Keyword
       / '__declspec'
       / '__attribute__'
       / '_Noreturn'
+      / '__asm' #FIXME: replace by asm
       )
     !IdChar
 
