@@ -26,3 +26,6 @@ void *__attribute__((__nonnull__ (1))) fun4(void)
 }
 
 char basename(const char *) __asm("" "__gnu_basename");
+
+siginfo_t sgt;
+typeof(sgt->si_signo) int_var;

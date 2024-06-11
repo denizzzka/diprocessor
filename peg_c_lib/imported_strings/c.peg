@@ -171,6 +171,9 @@ TypeSpecifier
     / COMPLEX
     / StructOrUnionSpecifier
     / EnumSpecifier
+    / TypeofSpecifier
+
+TypeofSpecifier <- TYPEOF LPAR Expression RPAR
 
 StructOrUnionSpecifier
    <- StructOrUnion
@@ -468,6 +471,7 @@ DECLSPEC  <- '__declspec' !IdChar Spacing
 ATTRIBUTE <- '__attribute__' !IdChar Spacing
 NORETURN  <- '_Noreturn' !IdChar Spacing
 ASM       <- '__asm'     !IdChar Spacing #FIXME: replace by asm
+TYPEOF    <- 'typeof'    !IdChar Spacing #FIXME: replace by asm
 
 Keyword
    <- ( 'auto'
@@ -512,6 +516,7 @@ Keyword
       / '__attribute__'
       / '_Noreturn'
       / '__asm' #FIXME: replace by asm
+      / 'typeof'
       )
     !IdChar
 
