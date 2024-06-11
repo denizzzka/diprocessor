@@ -12,3 +12,8 @@ long var2 __attribute__((__aligned__(__alignof__(long))));
 typedef struct {
 long long var3 __attribute__((__aligned__(__alignof__(long long))));
 } max_align_t;
+
+int fun2(void){ return 123; }
+
+int fprintf (FILE *restrict, const char *restrict, ...)
+              __attribute__ ((__format__ (__printf__, 2, 3)));

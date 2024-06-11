@@ -142,7 +142,10 @@ InitDeclaratorList <- InitDeclarator (COMMA InitDeclarator)* #{}
 
 InitDeclarator <- Declarator (EQU Initializer)? #{}
 
-ATTR_FEATURE <- ATTRIBUTE LPAR LPAR InitDeclaratorList* RPAR RPAR
+AttrArg <- InitDeclarator / AssignmentExpression
+AttrArgsList <- AttrArg (COMMA AttrArg)*
+
+ATTR_FEATURE <- ATTRIBUTE LPAR LPAR AttrArgsList* RPAR RPAR
 
 StorageClassSpecifier
    <- TYPEDEF
