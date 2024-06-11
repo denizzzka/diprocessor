@@ -503,6 +503,7 @@ Keyword
       / '_stdcall'
       / '__declspec'
       / '__attribute__'
+      / '_Noreturn'
       )
     !IdChar
 
