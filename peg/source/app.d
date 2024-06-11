@@ -1,16 +1,15 @@
 import std.stdio;
+import std.ascii: newline;
 
 void main()
 {
     import std.string: chomp;
-    import std.file;
 
     const string filename = stdin.readln.chomp;
-    auto file = readText(filename);
-    processFile(file);
+    processFile(filename);
 }
 
-void processFile(string file)
+void processFile(in string filename)
 {
     import peg_c_lib: Parser;
 
@@ -21,9 +20,24 @@ void processFile(string file)
     import std.exception: enforce;
     import std.algorithm;
 
+    import std.file: readText;
     import pegged.grammar: ParseTree;
 
+    auto file = readText(filename);
     auto parsed = parser.parse(file);
+
+    if(!parsed.successful)
+    {
+        // get only first failed ExternalDeclaration
+        foreach(ref c; parsed.children[0].children)
+            if(!c.successful && c.name == "C.ExternalDeclaration")
+            {
+                import std.algorithm.searching;
+
+                const linenum = file[0 .. c.end].count("\n") + 1;
+                throw new Exception(`Parse error in `~filename~`:`~linenum.to!string~newline~c.toString);
+            }
+    }
 
     static string[] parseToCode(ref ParseTree t)
     {
@@ -48,7 +62,7 @@ void processFile(string file)
             case "C.FunctionDefinition":
                 // special loop strips body of function
                 auto a = loopOverAll(t.children, true);
-                return [a.join, "\n"];
+                return [a.join, newline];
             default: return t.matches;
         }
     }
