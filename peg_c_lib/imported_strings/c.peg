@@ -116,7 +116,7 @@ AsmStatement <- ASM LPAR AsmArgs? RPAR
 
 AsmArgs <- StringLiteral+ ((COLON AsmClobber) / COLON)*
 
-AsmClobber <- StringLiteral (LPAR Identifier RPAR)?
+AsmClobber <- StringLiteral (LPAR Expression RPAR)?
 
 DeclarationList <- Declaration+
 
