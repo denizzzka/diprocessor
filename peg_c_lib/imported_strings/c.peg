@@ -104,12 +104,6 @@
 #  A.2.4  External definitions
 #-------------------------------------------------------------------------
 
-#package main
-
-#type C Peg {
-
-#}
-
 C:
 
 TranslationUnit <- Spacing ( ExternalDeclaration / SEMI ) * EOT
@@ -130,7 +124,6 @@ Declaration <- DeclarationSpecifiers InitDeclaratorList? SEMI #{}
 DeclarationSpecifiers
    <- (( StorageClassSpecifier
        / TypeQualifier
-       / TypeSpecifier
        / FunctionSpecifier
        )*
        TypedefName
@@ -217,7 +210,7 @@ TypeQualifier
 
 FunctionSpecifier <- INLINE / STDCALL
 
-Declarator <- Pointer? DirectDeclarator ATTR_FEATURE* #{}
+Declarator <- Pointer? DirectDeclarator #{}
 
 DirectDeclarator
    <- ( Identifier
@@ -229,7 +222,8 @@ DirectDeclarator
       / LBRK TypeQualifier* STAR RBRK
       / LPAR ParameterTypeList RPAR
       / LPAR IdentifierList? RPAR
-      )* #{}
+      )*
+      ATTR_FEATURE* #{}
 
 Pointer <- ( STAR TypeQualifier* )+
 
