@@ -55,3 +55,7 @@ void rv_utils_set_cycle_count(uint32_t ccount)
 }
 
 _Static_assert (sizeof(efuse_dev_t) == 0x200, "Invalid size of efuse_dev_t structure");
+
+typedef enum {
+  E123 __attribute__((deprecated("please use 456"))) = 123,
+} depr_t;

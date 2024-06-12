@@ -624,7 +624,7 @@ BinaryExponent <- [pP][+\-]? [0-9]+
 
 FloatSuffix <- [flFL]
 
-EnumerationConstant <- Identifier
+EnumerationConstant <- Identifier ATTR_FEATURE?
 
 CharacterConstant <- 'L'? ['] Char* ['] Spacing
 
