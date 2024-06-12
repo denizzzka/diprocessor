@@ -68,3 +68,11 @@ typedef enum {
 siginfo_t *s_slots[123] = {};
 
 typedef _Atomic int atomic_int;
+
+void intr_handler_set(int int_no, intr_handler_t fn, void *arg)
+{
+    intr_handler_item_t* item = intr_get_item(int_no);
+
+    *item = (intr_handler_item_t) {
+    };
+}

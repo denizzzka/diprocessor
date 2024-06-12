@@ -333,6 +333,7 @@ CompoundExpression <- LPAR CompoundStatement RPAR
 
 PrimaryExpression
    <- StringLiteral
+    / CompoundStatement
     / Constant
     / Identifier
     / LPAR Expression RPAR
@@ -360,7 +361,6 @@ UnaryExpression
     / DEC UnaryExpression
     / UnaryOperator CastExpression
     / SIZEOF (UnaryExpression / LPAR TypeName RPAR )
-    / CompoundExpression
 
 UnaryOperator
    <- AND
