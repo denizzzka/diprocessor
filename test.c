@@ -74,5 +74,7 @@ void intr_handler_set(int int_no, intr_handler_t fn, void *arg)
     intr_handler_item_t* item = intr_get_item(int_no);
 
     *item = (intr_handler_item_t) {
+        .handler = fn,
+        .arg = arg
     };
 }
