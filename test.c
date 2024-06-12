@@ -53,3 +53,5 @@ void rv_utils_set_cycle_count(uint32_t ccount)
 {
   ({ __asm ("csrw " "0x7e2" ", %0" :: "rK"(ccount) : "abc"(0x00000008)); });
 }
+
+_Static_assert (sizeof(efuse_dev_t) == 0x200, "Invalid size of efuse_dev_t structure");

@@ -108,7 +108,7 @@ C:
 
 TranslationUnit <- Spacing ( ExternalDeclaration / SEMI ) * EOT
 
-ExternalDeclaration <- FunctionDefinition / Declaration
+ExternalDeclaration <- FunctionDefinition / Declaration / StaticAssertDefinition
 
 FunctionDefinition <- DeclarationSpecifiers Declarator DeclarationList? (CompoundStatement / AsmStatement)
 
@@ -281,6 +281,7 @@ Designator
    <- LBRK ConstantExpression RBRK
     / DOT Identifier
 
+StaticAssertDefinition <- STATIC_ASSERT PostfixArgsAndBody
 
 #-------------------------------------------------------------------------
 #  A.2.3  Statements
@@ -479,7 +480,8 @@ DECLSPEC  <- '__declspec' !IdChar Spacing
 ATTRIBUTE <- '__attribute__' !IdChar Spacing
 NORETURN  <- '_Noreturn' !IdChar Spacing
 ASM       <- '__asm'     !IdChar Spacing #FIXME: replace by asm
-TYPEOF    <- 'typeof'    !IdChar Spacing #FIXME: replace by asm
+TYPEOF    <- 'typeof'    !IdChar Spacing
+STATIC_ASSERT <- '_Static_assert' !IdChar Spacing
 
 Keyword
    <- ( 'auto'
@@ -525,6 +527,7 @@ Keyword
       / '_Noreturn'
       / '__asm' #FIXME: replace by asm
       / 'typeof'
+      / '_Static_assert'
       )
     !IdChar
 
