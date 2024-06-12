@@ -148,10 +148,12 @@ InitDeclaratorList <- InitDeclarator (COMMA InitDeclarator)* #{}
 
 InitDeclarator <- Declarator (EQU Initializer)? #{}
 
-AttrArg <- InitDeclarator / AssignmentExpression
-AttrArgsList <- AttrArg (COMMA AttrArg)*
+MixedArg <- InitDeclarator / AssignmentExpression / TypeSpecifier
+MixedArgsList <- MixedArg (COMMA MixedArg)*
 
-ATTR_FEATURE <- ATTRIBUTE LPAR LPAR AttrArgsList* RPAR RPAR
+ATTR_FEATURE <- ATTRIBUTE LPAR LPAR MixedArgsList* RPAR RPAR
+
+VaArgExpression <- VA_ARG LPAR MixedArgsList RPAR
 
 StorageClassSpecifier
    <- TYPEDEF
@@ -394,6 +396,7 @@ ConditionalExpression <- LogicalORExpression (QUERY Expression COLON LogicalOREx
 AssignmentExpression
    <- UnaryExpression AssignmentOperator AssignmentExpression
     / ConditionalExpression
+    / VaArgExpression
 
 AssignmentOperator
    <- EQU
@@ -482,6 +485,7 @@ NORETURN  <- '_Noreturn' !IdChar Spacing
 ASM       <- '__asm'     !IdChar Spacing #FIXME: replace by asm
 TYPEOF    <- 'typeof'    !IdChar Spacing
 STATIC_ASSERT <- '_Static_assert' !IdChar Spacing
+VA_ARG    <- '__builtin_va_arg' !IdChar Spacing
 
 Keyword
    <- ( 'auto'
@@ -528,6 +532,7 @@ Keyword
       / '__asm' #FIXME: replace by asm
       / 'typeof'
       / '_Static_assert'
+      / '__builtin_va_arg'
       )
     !IdChar
 

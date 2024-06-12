@@ -49,6 +49,8 @@ void func7(void)
   int r;
   r = 0b11111110;
 
+  arg = __builtin_va_arg(r, int);
+
   return ({ unsigned long __tmp; __tmp = 123; __tmp; });
 }
 
