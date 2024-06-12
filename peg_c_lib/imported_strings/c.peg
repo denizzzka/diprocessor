@@ -284,7 +284,7 @@ Designator
    <- LBRK ConstantExpression RBRK
     / DOT Identifier
 
-StaticAssertDefinition <- STATIC_ASSERT PostfixArgsAndBody
+StaticAssertDefinition <- STATIC_ASSERT PostfixArgs
 
 #-------------------------------------------------------------------------
 #  A.2.3  Statements
@@ -341,9 +341,9 @@ PostfixExpression
    <- ( PrimaryExpression
       / LPAR TypeName RPAR LWING InitializerList COMMA? RWING
       )
-      PostfixArgsAndBody
+      PostfixArgs
 
-PostfixArgsAndBody <-
+PostfixArgs <-
       ( LBRK Expression RBRK
       / LPAR ArgumentExpressionList? RPAR
       / DOT Identifier
