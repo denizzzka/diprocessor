@@ -220,6 +220,7 @@ TypeQualifier
    <- CONST
     / RESTRICT
     / VOLATILE
+    / ATOMIC
     / DECLSPEC LPAR Identifier RPAR
     / ATTR_FEATURE
 
@@ -477,6 +478,7 @@ VOID      <- 'void'      !IdChar Spacing
 VOLATILE  <- 'volatile'  !IdChar Spacing
 WHILE     <- 'while'     !IdChar Spacing
 BOOL      <- '_Bool'     !IdChar Spacing
+ATOMIC    <- '_Atomic'   !IdChar Spacing
 COMPLEX   <- '_Complex'  !IdChar Spacing
 STDCALL   <- '_stdcall'  !IdChar Spacing
 DECLSPEC  <- '__declspec' !IdChar Spacing
@@ -523,6 +525,7 @@ Keyword
       / 'volatile'
       / 'while'
       / '_Bool'
+      / '_Atomic'
       / '_Complex'
       / '_Imaginary'
       / '_stdcall'

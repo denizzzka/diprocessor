@@ -66,3 +66,5 @@ typedef enum {
 } depr_t;
 
 siginfo_t *s_slots[123] = {};
+
+typedef _Atomic int atomic_int;
