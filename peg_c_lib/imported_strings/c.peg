@@ -571,7 +571,9 @@ Constant
     / CharacterConstant
 
 IntegerConstant
-   <- ( DecimalConstant
+   <- (
+      BinaryConstant
+      / DecimalConstant
       / HexConstant
       / OctalConstant
       )
@@ -586,6 +588,8 @@ HexConstant     <- HexPrefix HexDigit+
 HexPrefix       <- '0x' / '0X'
 
 HexDigit        <- [a-f] / [A-F] / [0-9]
+
+BinaryConstant   <- '0b' [01]+
 
 IntegerSuffix
    <- [uU] Lsuffix?
