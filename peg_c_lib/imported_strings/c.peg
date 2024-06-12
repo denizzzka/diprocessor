@@ -271,7 +271,7 @@ TypedefName <-Identifier #{&TypedefName}
 
 Initializer
    <- AssignmentExpression
-    / LWING InitializerList COMMA? RWING
+    / LWING (InitializerList COMMA?)? RWING
 
 InitializerList <- Designation? Initializer (COMMA Designation? Initializer)*
 
