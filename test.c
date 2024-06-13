@@ -7,6 +7,8 @@ typedef struct {
 
 int fun1(int i){ return i; }
 
+uint64_t systimer_us_to_ticks(uint64_t us) __attribute__((const));
+
 long var2 __attribute__((__aligned__(__alignof__(long))));
 
 typedef struct {
