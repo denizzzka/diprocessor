@@ -401,6 +401,7 @@ ConditionalExpression <- LogicalORExpression (QUERY Expression COLON LogicalOREx
 AssignmentExpression
    <- UnaryExpression AssignmentOperator AssignmentExpression
     / ConditionalExpression
+    / StaticAssertDefinition
     / VaArgExpression
 
 AssignmentOperator
