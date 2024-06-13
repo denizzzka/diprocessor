@@ -112,7 +112,7 @@ ExternalDeclaration <- FunctionDefinition / Declaration / StaticAssertDefinition
 
 FunctionDefinition <- DeclarationSpecifiers Declarator DeclarationList? (CompoundStatement / AsmStatement)
 
-AsmStatement <- ASM LPAR AsmArgs? RPAR
+AsmStatement <- ASM TypeQualifier? LPAR AsmArgs? RPAR
 
 AsmArgs <- StringLiteral+ ((COLON AsmClobber) / COLON)*
 

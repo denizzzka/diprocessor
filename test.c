@@ -35,6 +35,7 @@ typeof(sgt->si_signo) int_var;
 static inline __attribute__((always_inline)) void __attribute__((always_inline)) rv_utils_wait_for_intr(void)
 {
   __asm ("wfi\n");
+  __asm volatile(".cfi_undefined ra");
 }
 
 static inline __attribute__((always_inline)) void *rv_utils_get_sp(void)
