@@ -4,12 +4,31 @@ import std.ascii: newline;
 void main()
 {
     import std.string: chomp;
+    import std.typecons: Yes;
+    import std.algorithm;
 
     const string filename = stdin.readln.chomp;
-    processFile(filename);
+    auto file = File(filename);
+
+    size_t linenum;
+    string fileChunk;
+    foreach(l; file.byLine(Yes.keepTerminator))
+    {
+        linenum++;
+
+        fileChunk ~= l.idup;
+
+        if(l.startsWith(`// END code file: `))
+        {
+            processFile(fileChunk, filename, linenum);
+            fileChunk = "";
+        }
+    }
+
+    processFile(fileChunk, filename, linenum);
 }
 
-void processFile(in string filename)
+void processFile(string fileChunk, in string filename, in size_t preprFileLinenum)
 {
     import peg_c_lib: Parser;
 
@@ -20,12 +39,9 @@ void processFile(in string filename)
     import std.exception: enforce;
     import std.algorithm;
 
-    import std.file: readText;
     import pegged.grammar: ParseTree;
 
-    // pegged counts lines unconventionally, from 0. That's why a newline is added here
-    auto file = newline~readText(filename);
-    auto parsed = parser.parse(file);
+    auto parsed = parser.parse(fileChunk);
 
     if(!parsed.successful)
     {
@@ -35,7 +51,7 @@ void processFile(in string filename)
             {
                 import std.algorithm.searching;
 
-                const linenum = file[0 .. c.end].count("\n");
+                const linenum = preprFileLinenum + fileChunk[0 .. c.end].count("\n");
                 throw new Exception(`Parse error in `~filename~`:`~linenum.to!string~newline~c.toString);
             }
     }
