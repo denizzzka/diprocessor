@@ -556,7 +556,7 @@ Keyword
 #  distinct from keywords, but it seems so.
 #-------------------------------------------------------------------------
 
-Identifier <- !Keyword IdNondigit IdChar* Spacing #{}
+Identifier <- !Keyword IdNondigit IdChar* DOLLAR? Spacing #{}
 
 IdNondigit
    <- [a-z] / [A-Z] / [_]
@@ -722,5 +722,6 @@ ANDEQU    <-  '&='        Spacing
 HATEQU    <-  '^='        Spacing
 OREQU     <-  '|='        Spacing
 COMMA     <-  ','         Spacing
+DOLLAR    <-  '$'         Spacing
 
 EOT       <-  !.

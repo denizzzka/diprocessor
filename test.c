@@ -97,5 +97,5 @@ typedef struct __attribute__((packed)) socks_request {
 void hostapd_cleanup(struct hostapd_data *hapd)
 {
   tmp = __builtin_offsetof (struct hostapd_sae_commit_queue, list);
-
+  extern uint32_t __global_pointer$;
 }
