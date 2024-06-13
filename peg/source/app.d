@@ -11,7 +11,8 @@ void main()
     auto file = File(filename);
 
     size_t linenum;
-    string fileChunk;
+    size_t chunkStartLineNum;
+    string fileChunk = "\n"; // pegged counts lines unconventionally, from 0. That's why a newline is added here
     foreach(l; file.byLine(Yes.keepTerminator))
     {
         linenum++;
@@ -20,12 +21,13 @@ void main()
 
         if(l.startsWith(`// END code file: `))
         {
-            processFile(fileChunk, filename, linenum);
-            fileChunk = "";
+            processFile(fileChunk, filename, chunkStartLineNum);
+            chunkStartLineNum = linenum + 1;
+            fileChunk = "\n";
         }
     }
 
-    processFile(fileChunk, filename, linenum);
+    processFile(fileChunk, filename, chunkStartLineNum);
 }
 
 void processFile(string fileChunk, in string filename, in size_t preprFileLinenum)
