@@ -286,6 +286,8 @@ Designator
    <- LBRK ConstantExpression RBRK
     / DOT Identifier
 
+RangeExpression <- ConstantExpression ELLIPSIS ConstantExpression
+
 StaticAssertDefinition <- STATIC_ASSERT PostfixArgs
 
 #-------------------------------------------------------------------------
@@ -415,7 +417,7 @@ AssignmentOperator
 
 Expression <- AssignmentExpression (COMMA AssignmentExpression)*
 
-ConstantExpression <- ConditionalExpression
+ConstantExpression <- RangeExpression / ConditionalExpression
 
 
 #-------------------------------------------------------------------------

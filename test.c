@@ -75,6 +75,7 @@ void intr_handler_set(int int_no, intr_handler_t fn, void *arg)
 
     *item = (intr_handler_item_t) {
         .handler = fn,
-        .arg = arg
+        .arg = arg,
+        [0 ... 64-1] = 123
     };
 }
