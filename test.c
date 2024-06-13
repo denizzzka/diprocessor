@@ -79,3 +79,7 @@ void intr_handler_set(int int_no, intr_handler_t fn, void *arg)
         [0 ... 64-1] = 123
     };
 }
+
+typedef struct __attribute__((packed)) socks_request {
+  uint8_t version;
+} socks_request_t;

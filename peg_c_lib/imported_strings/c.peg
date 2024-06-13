@@ -183,6 +183,7 @@ TypeofSpecifier <- TYPEOF LPAR Expression RPAR
 
 StructOrUnionSpecifier
    <- StructOrUnion
+      ATTR_FEATURE*
       ( Identifier? LWING StructDeclaration* RWING
       / Identifier
       )
