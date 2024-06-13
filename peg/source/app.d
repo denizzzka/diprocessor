@@ -22,7 +22,7 @@ void main()
         if(l.startsWith(`// END code file: `))
         {
             processFile(fileChunk, filename, chunkStartLineNum);
-            chunkStartLineNum = linenum + 1;
+            chunkStartLineNum = linenum;
             fileChunk = "\n";
         }
     }
