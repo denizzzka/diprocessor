@@ -155,6 +155,8 @@ ATTR_FEATURE <- ATTRIBUTE LPAR LPAR MixedArgsList* RPAR RPAR
 
 VaArgExpression <- VA_ARG LPAR MixedArgsList RPAR
 
+OffsetofExpression <- OFFSETOF LPAR MixedArg COMMA MixedArg RPAR
+
 StorageClassSpecifier
    <- TYPEDEF
     / EXTERN
@@ -340,6 +342,8 @@ PrimaryExpression
     / Constant
     / Identifier
     / LPAR Expression RPAR
+    / VaArgExpression
+    / OffsetofExpression
 
 PostfixExpression
    <- ( PrimaryExpression
@@ -402,7 +406,6 @@ AssignmentExpression
    <- UnaryExpression AssignmentOperator AssignmentExpression
     / ConditionalExpression
     / StaticAssertDefinition
-    / VaArgExpression
 
 AssignmentOperator
    <- EQU
@@ -493,6 +496,7 @@ ASM       <- '__asm'     !IdChar Spacing #FIXME: replace by asm
 TYPEOF    <- 'typeof'    !IdChar Spacing
 STATIC_ASSERT <- '_Static_assert' !IdChar Spacing
 VA_ARG    <- '__builtin_va_arg' !IdChar Spacing
+OFFSETOF  <- '__builtin_offsetof' !IdChar Spacing
 
 Keyword
    <- ( 'auto'
@@ -541,6 +545,7 @@ Keyword
       / 'typeof'
       / '_Static_assert'
       / '__builtin_va_arg'
+      / '__builtin_offsetof'
       )
     !IdChar
 

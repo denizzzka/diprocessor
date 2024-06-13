@@ -90,3 +90,9 @@ void intr_handler_set(int int_no, intr_handler_t fn, void *arg)
 typedef struct __attribute__((packed)) socks_request {
   uint8_t version;
 } socks_request_t;
+
+void hostapd_cleanup(struct hostapd_data *hapd)
+{
+  tmp = __builtin_offsetof (struct hostapd_sae_commit_queue, list);
+
+}
