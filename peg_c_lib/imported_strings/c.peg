@@ -148,7 +148,7 @@ InitDeclaratorList <- InitDeclarator (COMMA InitDeclarator)* #{}
 
 InitDeclarator <- Declarator (EQU Initializer)? #{}
 
-MixedArg <- InitDeclarator / AssignmentExpression / TypeSpecifier / TypeQualifier
+MixedArg <- (InitDeclarator / AssignmentExpression / TypeSpecifier / TypeQualifier) STAR?
 MixedArgsList <- MixedArg (COMMA MixedArg)*
 
 ATTR_FEATURE <- ATTRIBUTE LPAR LPAR MixedArgsList* RPAR RPAR

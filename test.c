@@ -94,6 +94,11 @@ typedef struct __attribute__((packed)) socks_request {
   uint8_t version;
 } socks_request_t;
 
+static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args)
+{
+  return lwip_ioctl(fd, cmd, __builtin_va_arg(args, void*));
+}
+
 void hostapd_cleanup(struct hostapd_data *hapd)
 {
   tmp = __builtin_offsetof (struct hostapd_sae_commit_queue, list);
