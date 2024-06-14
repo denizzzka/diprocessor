@@ -73,7 +73,7 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    void addLine(size_t num, CodeLinePiece[] code, in PreprFileLineRef preprocessedLineRef)
+    void addLine(ref CodeLine cl)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
@@ -82,25 +82,23 @@ struct CodeFile
 
         auto sortedList = assumeSorted!byLineNum(list);
 
-        //TODO: use cl as argument?
-        CodeLine cl = {lineNum: num, code: code, preprocessedLineRef: preprocessedLineRef};
         auto searchResults = sortedList.trisect(cl);
 
         if(searchResults[1].length != 0)
         {
-            assert(searchResults[1].length == 1, "Many code lines with same line number: "~num.to!string~", line: "~code.to!string);
+            assert(searchResults[1].length == 1, "Many code lines with same line number: "~cl.lineNum.to!string~", line: "~cl.code.to!string);
 
             const found = searchResults[1][0];
 
             if(!cl.equal(found))
             {
                 string msg = ("different contents of the same "~
-                    ((found.code.length > 1 || code.length > 1) ? "splitten " : "")~
-                    "line in source: "~filename~":"~num.to!string~
+                    ((found.code.length > 1 || cl.code.length > 1) ? "splitten " : "")~
+                    "line in source: "~filename~":"~cl.lineNum.to!string~
                     "\n1: "~found.preprocessedLineRef._toString~
-                    "\n2: "~preprocessedLineRef._toString~
+                    "\n2: "~cl.preprocessedLineRef._toString~
                     "\nL1:"~found.code.to!string~
-                    "\nL2:"~code.to!string
+                    "\nL2:"~cl.code.to!string
                 );
 
                 throw new SameLineDiffContentEx(msg);
@@ -186,14 +184,14 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(in CodeFileLineRef codeLineRef, CodeLine codeline)
+    void store(in string codeFilename, CodeLine codeline)
     {
-        size_t* fileIdxPtr = (codeLineRef.filename in codeFilesIndex);
+        size_t* fileIdxPtr = (codeFilename in codeFilesIndex);
         size_t fileIdx;
 
         if(fileIdxPtr is null)
         {
-            CodeFile newFile = {filename: codeLineRef.filename};
+            CodeFile newFile = {filename: codeFilename};
             fileIdx = codeFiles.length;
             codeFilesIndex[newFile.filename] = fileIdx;
             codeFiles ~= newFile;
@@ -202,7 +200,7 @@ struct Storage
             fileIdx = *fileIdxPtr;
 
         try
-            codeFiles[fileIdx].addLine(codeLineRef.lineNum, codeline.code, codeline.preprocessedLineRef);
+            codeFiles[fileIdx].addLine(codeline);
         catch(SameLineDiffContentEx e)
         {
             import std.stdio;
@@ -432,9 +430,10 @@ void processFile(F)(F file, in string preprFileName)
             if(!nextLineIsSameOriginalLine && !currCodeLine.empty)
             {
                 currCodeLine.preprocessedLineRef.lineNum = notStoredPreprFileLineNum;
+                currCodeLine.lineNum = prevLinemarker.fileRef.lineNum;
 
                 try
-                    result.store(prevLinemarker.fileRef, currCodeLine);
+                    result.store(prevLinemarker.fileRef.filename, currCodeLine);
                 catch(SameLineDiffContentEx e)
                     return;
 
@@ -463,9 +462,10 @@ void processFile(F)(F file, in string preprFileName)
     // Store latest code line
     //FIXME: code duplication
     currCodeLine.preprocessedLineRef.lineNum = notStoredPreprFileLineNum;
+    currCodeLine.lineNum = prevLinemarker.fileRef.lineNum;
 
     try
-        result.store(prevLinemarker.fileRef, currCodeLine);
+        result.store(prevLinemarker.fileRef.filename, currCodeLine);
     catch(SameLineDiffContentEx e)
         return;
 }
