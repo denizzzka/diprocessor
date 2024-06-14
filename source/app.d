@@ -434,13 +434,19 @@ void processFile(F)(F file, in string preprFileName)
             // Process current line
             const pureLinePiece = isLineDescr ? line.idup : line.twoSidesChomp();
 
-            if(pureLinePiece.length)
-                currCodeLine ~= CodeLinePiece(piece: pureLinePiece, isLinemarker: isLineDescr);
-
-            prevLinemarker = linemarker;
-            nextLineIsSameOriginalLine = false;
+            if(!isLineDescr && pureLinePiece.length)
+            {
+                const toStore = isLineDescr ? linemarker.getCanonicalRepr : pureLinePiece;
+                currCodeLine ~= CodeLinePiece(piece: toStore, isLinemarker: isLineDescr);
+            }
 
             linemarker.fileRef.lineNum++;
+
+            if(!nextLineIsSameOriginalLine)
+                prevLinemarker = linemarker;
+
+            if(!isLineDescr)
+                nextLineIsSameOriginalLine = false;
         }
     }
 
