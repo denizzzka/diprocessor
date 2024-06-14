@@ -315,7 +315,7 @@ int main(string[] args)
 
     bool wasIgnoredFile;
 
-    foreach(cFile; result.codeFiles)
+    foreach(ref const cFile; result.codeFiles)
     {
         size_t prevCodeLineNum;
 
@@ -326,7 +326,7 @@ int main(string[] args)
             if(options.prepr_refs_comments)
                 store_file.writeln(`// BEGIN code file: `~cFile.filename);
 
-            foreach(cLine; cFile.list)
+            foreach(ref const cLine; cFile.list)
             {
                 void writeLinemarker()
                 {
@@ -352,7 +352,7 @@ int main(string[] args)
                             store_file.writeln("");
                 }
 
-                foreach(i, physLine; cLine.code)
+                foreach(i, ref const physLine; cLine.code)
                 {
                     if(i > 0) writeLinemarker(); // repeat linemarker for splitten line
                     store_file.writeln(physLine.piece);
