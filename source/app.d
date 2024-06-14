@@ -181,7 +181,7 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(in PreprFileLineRef preprocessedLineRef, in CodeFileLineRef codeLineRef, CodeLinePiece[] codeline)
+    void store(in CodeFileLineRef codeLineRef, CodeLine codeline)
     {
         size_t* fileIdxPtr = (codeLineRef.filename in codeFilesIndex);
         size_t fileIdx;
@@ -197,7 +197,7 @@ struct Storage
             fileIdx = *fileIdxPtr;
 
         try
-            codeFiles[fileIdx].addLine(codeLineRef.lineNum, codeline, preprocessedLineRef);
+            codeFiles[fileIdx].addLine(codeLineRef.lineNum, codeline.code, codeline.preprocessedLineRef);
         catch(SameLineDiffContentEx e)
         {
             import std.stdio;
@@ -391,7 +391,8 @@ void processFile(F)(F file, in string preprFileName)
     DecodedLinemarker linemarker;
     DecodedLinemarker prevLinemarker;
     bool nextLineIsSameOriginalLine;
-    CodeLinePiece[] currCodeLine; // one original source code line can be represented by a few preprocessed lines
+    CodeLine currCodeLine;
+    currCodeLine.preprocessedLineRef.filename = preprFileName;
 
     DecodedLinemarker[] stack;
 
@@ -423,27 +424,27 @@ void processFile(F)(F file, in string preprFileName)
             enforce(linemarker.fileRef.lineNum != 0, "Line number zero is not possible: "~preprFileName~":"~preprFileLineNum.to!string);
 
             // Store previous line if need
-            if(!nextLineIsSameOriginalLine && currCodeLine.length)
+            if(!nextLineIsSameOriginalLine && currCodeLine.code.length)
             {
-                PreprFileLineRef preprFileLine = FileLineRef(filename: preprFileName, lineNum: notStoredPreprFileLineNum);
+                currCodeLine.preprocessedLineRef.lineNum = notStoredPreprFileLineNum;
 
                 try
-                    result.store(preprFileLine, prevLinemarker.fileRef, currCodeLine);
+                    result.store(prevLinemarker.fileRef, currCodeLine);
                 catch(SameLineDiffContentEx e)
                     return;
 
-                currCodeLine.length = 0;
+                currCodeLine.code.length = 0;
             }
 
             // Store current line piece line number in prepared file for further use
-            if(currCodeLine.length == 0)
+            if(currCodeLine.code.length == 0)
                 notStoredPreprFileLineNum = preprFileLineNum;
 
             // Process current line
             const pureLinePiece = line.twoSidesChomp();
 
             if(pureLinePiece.length)
-                currCodeLine ~= CodeLinePiece(piece: pureLinePiece, isLinemarker: isLineDescr);
+                currCodeLine.code ~= CodeLinePiece(piece: pureLinePiece, isLinemarker: isLineDescr);
 
             prevLinemarker = linemarker;
             nextLineIsSameOriginalLine = false;
@@ -456,10 +457,10 @@ void processFile(F)(F file, in string preprFileName)
 
     // Store latest code line
     //FIXME: code duplication
-    PreprFileLineRef preprFileLine = FileLineRef(filename: preprFileName, lineNum: notStoredPreprFileLineNum);
+    currCodeLine.preprocessedLineRef.lineNum = notStoredPreprFileLineNum;
 
     try
-        result.store(preprFileLine, prevLinemarker.fileRef, currCodeLine);
+        result.store(prevLinemarker.fileRef, currCodeLine);
     catch(SameLineDiffContentEx e)
         return;
 }
