@@ -397,6 +397,19 @@ void processFile(F)(F file, in string preprFileName)
     CodeLine currCodeLine;
     currCodeLine.preprocessedLineRef.filename = preprFileName;
 
+    bool storeLine()
+    {
+        currCodeLine.preprocessedLineRef.lineNum = notStoredPreprFileLineNum;
+        currCodeLine.lineNum = prevLinemarker.fileRef.lineNum;
+
+        try
+            result.store(prevLinemarker.fileRef.filename, currCodeLine);
+        catch(SameLineDiffContentEx e)
+            return false;
+
+        return true;
+    }
+
     DecodedLinemarker[] stack;
 
     foreach(line; file.byLine(Yes.keepTerminator))
@@ -429,13 +442,8 @@ void processFile(F)(F file, in string preprFileName)
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && !currCodeLine.empty)
             {
-                currCodeLine.preprocessedLineRef.lineNum = notStoredPreprFileLineNum;
-                currCodeLine.lineNum = prevLinemarker.fileRef.lineNum;
-
-                try
-                    result.store(prevLinemarker.fileRef.filename, currCodeLine);
-                catch(SameLineDiffContentEx e)
-                    return;
+                if(!storeLine())
+                    return; // same line found, file will be ignored
 
                 currCodeLine.code.length = 0;
             }
@@ -460,12 +468,5 @@ void processFile(F)(F file, in string preprFileName)
     enforce(stack.length == 0, "linemarkers stack isn't empty at the end of merging:\n"~stack.to!string);
 
     // Store latest code line
-    //FIXME: code duplication
-    currCodeLine.preprocessedLineRef.lineNum = notStoredPreprFileLineNum;
-    currCodeLine.lineNum = prevLinemarker.fileRef.lineNum;
-
-    try
-        result.store(prevLinemarker.fileRef.filename, currCodeLine);
-    catch(SameLineDiffContentEx e)
-        return;
+    storeLine();
 }
