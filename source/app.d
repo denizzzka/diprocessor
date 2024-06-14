@@ -11,7 +11,6 @@ struct FileLineRef
 
 struct CodeLine
 {
-    FileLineRef preprocessedLineRef;
     size_t lineNum;
     CodeLinePiece[] code; // one code line can be described on few lines of a preprocessed file
 
@@ -22,10 +21,21 @@ struct CodeLine
 
         return code.filter!(a => a.isLinemarker).map!(a => a.piece).join;
     }
+
+    ref auto preprFirstLineRef() const
+    {
+        //~ assert(code.length);
+
+        if(!code.length)
+            return FileLineRef("NETU", 666); //FIXME: remove
+
+        return code[0].preprocessedLineRef;
+    }
 }
 
 struct CodeLinePiece
 {
+    FileLineRef preprocessedLineRef;
     bool isLinemarker;
     string piece;
 }
@@ -53,7 +63,7 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    void addLine(size_t num, CodeLinePiece[] code, in FileLineRef preprocessedLineRef)
+    void addLine(size_t num, CodeLinePiece[] code, in FileLineRef preprocessedLineRef /* FIXME: unused arg */)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
@@ -63,8 +73,8 @@ struct CodeFile
 
         auto sortedList = assumeSorted!byLineNum(list);
 
-        //TODO: use cl as argument?
-        CodeLine cl = {lineNum: num, code: code, preprocessedLineRef: preprocessedLineRef};
+        //TODO: use cl as argument for this func?
+        CodeLine cl = {lineNum: num, code: code};
         auto searchResults = sortedList.trisect(cl);
 
         if(searchResults[1].length != 0)
@@ -81,7 +91,7 @@ struct CodeFile
                 string msg = ("different contents of the same "~
                     ((found.code.length > 1 || code.length > 1) ? "splitten " : "")~
                     "line in source: "~filename~":"~num.to!string~
-                    "\n1: "~found.preprocessedLineRef.toString~
+                    "\n1: "~found.preprFirstLineRef.toString~
                     "\n2: "~preprocessedLineRef.toString~
                     "\nL1:"~found.code.to!string~
                     "\nL2:"~code.to!string
@@ -315,7 +325,7 @@ int main(string[] args)
 
     bool wasIgnoredFile;
 
-    foreach(cFile; result.codeFiles)
+    foreach(ref cFile; result.codeFiles)
     {
         size_t prevCodeLineNum;
 
@@ -326,7 +336,7 @@ int main(string[] args)
             if(options.prepr_refs_comments)
                 store_file.writeln(`// BEGIN code file: `~cFile.filename);
 
-            foreach(cLine; cFile.list)
+            foreach(ref cLine; cFile.list)
             {
                 void writeLinemarker()
                 {
@@ -337,7 +347,7 @@ int main(string[] args)
                 if(prevCodeLineNum == 0)
                 {
                     if(options.prepr_refs_comments)
-                        store_file.writeln(`// From prepr file: `~cLine.preprocessedLineRef.toString);
+                        store_file.writeln(`// From prepr file: `~cLine.preprFirstLineRef.toString);
 
                     writeLinemarker(); // first line of preprocessed file
                 }
@@ -432,7 +442,11 @@ void processFile(F)(F file, in string preprFileName)
             const pureLinePiece = line.twoSidesChomp();
 
             if(pureLinePiece.length)
-                currCodeLine ~= CodeLinePiece(piece: pureLinePiece, isLinemarker: isLineDescr);
+                currCodeLine ~= CodeLinePiece(
+                    piece: pureLinePiece,
+                    isLinemarker: isLineDescr,
+                    preprocessedLineRef: FileLineRef(filename: preprFileName, lineNum: preprFileLineNum)
+                );
 
             prevLinemarker = linemarker;
             nextLineIsSameOriginalLine = false;
