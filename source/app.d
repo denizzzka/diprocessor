@@ -15,12 +15,22 @@ struct CodeLine
     size_t lineNum;
     CodeLinePiece[] code; // one code line can be described on few lines of a preprocessed file
 
-    auto stripLinemarkers() const
+    private auto stripLinemarkers() const
     {
         import std.array;
         import std.algorithm;
 
         return code.filter!(a => a.isLinemarker).map!(a => a.piece).join;
+    }
+
+    bool equal(in CodeLine f) const
+    {
+        import std.algorithm.comparison: equal;
+
+        const l1 = f.stripLinemarkers;
+        const l2 = this.stripLinemarkers;
+
+        return equal(l1, l2);
     }
 }
 
@@ -59,7 +69,6 @@ struct CodeFile
         import std.algorithm.sorting;
         import std.algorithm.searching;
         import std.array: insertInPlace;
-        import std.algorithm.comparison: equal;
 
         auto sortedList = assumeSorted!byLineNum(list);
 
@@ -73,10 +82,7 @@ struct CodeFile
 
             const found = searchResults[1][0];
 
-            const l1 = found.stripLinemarkers;
-            const l2 = cl.stripLinemarkers;
-
-            if(!equal(l1, l2))
+            if(!cl.equal(found))
             {
                 string msg = ("different contents of the same "~
                     ((found.code.length > 1 || code.length > 1) ? "splitten " : "")~
