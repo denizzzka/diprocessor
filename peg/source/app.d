@@ -17,14 +17,32 @@ void main()
     {
         linenum++;
 
-        fileChunk ~= l.idup;
-
-        if(l.startsWith(`// END code file: `))
+        if(fileChunk.length > 1 && l.startsWith(`// BEGIN code file: `))
         {
             processFile(fileChunk, filename, chunkStartLineNum);
             chunkStartLineNum = linenum;
             fileChunk = "\n";
+
+            // Clean memory
+            {
+                import core.memory: GC;
+
+                static size_t chunkNum;
+                chunkNum++;
+
+                if(chunkNum % 25 == 0)
+                {
+                    GC.collect();
+                    GC.minimize();
+
+                    import std.datetime.systime;
+
+                    stderr.writeln("Chunk ", chunkNum, " done, time ", Clock.currTime);
+                }
+            }
         }
+
+        fileChunk ~= l.idup;
     }
 
     processFile(fileChunk, filename, chunkStartLineNum);
@@ -88,4 +106,6 @@ void processFile(string fileChunk, in string filename, in size_t preprFileLinenu
 
     foreach(s; parseToCode(parsed))
         s.write;
+
+    stdout.flush();
 }
