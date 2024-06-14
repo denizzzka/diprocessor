@@ -13,7 +13,21 @@ struct CodeLine
 {
     FileLineRef preprocessedLineRef;
     size_t lineNum;
-    string[] code; // one code line can be described on few lines of a preprocessed file
+    CodeLinePiece[] code; // one code line can be described on few lines of a preprocessed file
+
+    auto stripLinemarkers() const
+    {
+        import std.array;
+        import std.algorithm;
+
+        return code.filter!(a => a.isLinemarker).map!(a => a.piece).join;
+    }
+}
+
+struct CodeLinePiece
+{
+    bool isLinemarker;
+    string piece;
 }
 
 class SameLineDiffContentEx : Exception
@@ -39,7 +53,7 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    void addLine(size_t num, string[] code, in FileLineRef preprocessedLineRef)
+    void addLine(size_t num, CodeLinePiece[] code, in FileLineRef preprocessedLineRef)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
@@ -49,6 +63,7 @@ struct CodeFile
 
         auto sortedList = assumeSorted!byLineNum(list);
 
+        //TODO: use cl as argument?
         CodeLine cl = {lineNum: num, code: code, preprocessedLineRef: preprocessedLineRef};
         auto searchResults = sortedList.trisect(cl);
 
@@ -58,10 +73,8 @@ struct CodeFile
 
             const found = searchResults[1][0];
 
-            import std.array: join;
-
-            const l1 = found.code.join;
-            const l2 = code.join;
+            const l1 = found.stripLinemarkers;
+            const l2 = cl.stripLinemarkers;
 
             if(!equal(l1, l2))
             {
@@ -157,7 +170,7 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(in FileLineRef preprocessedLineRef, in FileLineRef codeLineRef, string[] codeline)
+    void store(in FileLineRef preprocessedLineRef, in FileLineRef codeLineRef, CodeLinePiece[] codeline)
     {
         size_t* fileIdxPtr = (codeLineRef.filename in codeFilesIndex);
         size_t fileIdx;
@@ -342,7 +355,7 @@ int main(string[] args)
                 foreach(i, physLine; cLine.code)
                 {
                     if(i > 0) writeLinemarker(); // repeat linemarker for splitten line
-                    store_file.writeln(physLine);
+                    store_file.writeln(physLine.piece);
                 }
 
                 prevCodeLineNum = cLine.lineNum;
@@ -367,7 +380,7 @@ void processFile(F)(F file, in string preprFileName)
     DecodedLinemarker linemarker;
     DecodedLinemarker prevLinemarker;
     bool nextLineIsSameOriginalLine;
-    string[] currCodeLine; // one original source code line can be represented by a few preprocessed lines
+    CodeLinePiece[] currCodeLine; // one original source code line can be represented by a few preprocessed lines
 
     DecodedLinemarker[] stack;
 
@@ -419,7 +432,7 @@ void processFile(F)(F file, in string preprFileName)
             const pureLinePiece = line.twoSidesChomp();
 
             if(pureLinePiece.length)
-                currCodeLine ~= pureLinePiece;
+                currCodeLine ~= CodeLinePiece(piece: pureLinePiece, isLinemarker: isLineDescr);
 
             prevLinemarker = linemarker;
             nextLineIsSameOriginalLine = false;
