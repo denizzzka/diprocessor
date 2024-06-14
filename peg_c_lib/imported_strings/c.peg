@@ -244,7 +244,12 @@ DirectDeclarator
       / LPAR ParameterTypeList RPAR
       / LPAR IdentifierList? RPAR
       )*
-      ATTR_FEATURE* #{}
+      (
+        ATTR_FEATURE
+        / AsmRegSpecifier
+      )*
+
+AsmRegSpecifier <-ASM LPAR StringLiteral RPAR
 
 Pointer <- ( STAR TypeQualifier* )+
 

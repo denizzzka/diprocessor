@@ -115,4 +115,7 @@ void hostapd_cleanup(struct hostapd_data *hapd)
     : "t0",
     "t1"
   );
+
+  register long a0 __asm ("a0") = id;
+  register long a1 __asm ("a1") = (long) data;
 }
