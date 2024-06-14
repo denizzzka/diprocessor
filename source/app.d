@@ -186,6 +186,7 @@ struct Storage
     }
 }
 
+//TODO: rename to isLinemarker
 private bool isLineDescr(in char[] line)
 {
     return line.length > 1 && line[0] == '#' && line[1] == ' ';
@@ -368,6 +369,8 @@ void processFile(F)(F file, in string preprFileName)
     bool nextLineIsSameOriginalLine;
     string[] currCodeLine; // one original source code line can be represented by a few preprocessed lines
 
+    DecodedLinemarker[] stack;
+
     foreach(line; file.byLine(Yes.keepTerminator))
     {
         preprFileLineNum++;
@@ -377,6 +380,15 @@ void processFile(F)(F file, in string preprFileName)
         if(isLineDescr)
         {
             linemarker = decodeLinemarker(line);
+
+            if(linemarker.startOfFile)
+                stack ~= linemarker;
+            else if(linemarker.returningToFile)
+            {
+                enforce(stack.length > 0, "linemarkers stack empty, but returning linemarker found:\n"~linemarker.to!string);
+
+                stack.length = stack.length - 1;
+            }
 
             // Next line will be next piece of a same source line?
             nextLineIsSameOriginalLine = (prevLinemarker.fileRef == linemarker.fileRef);
@@ -415,6 +427,8 @@ void processFile(F)(F file, in string preprFileName)
             linemarker.fileRef.lineNum++;
         }
     }
+
+    enforce(stack.length == 0, "linemarkers stack isn't empty at the end of merging:\n"~stack.to!string);
 
     // Store latest code line
     //FIXME: code duplication
