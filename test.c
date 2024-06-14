@@ -103,4 +103,16 @@ void hostapd_cleanup(struct hostapd_data *hapd)
 {
   tmp = __builtin_offsetof (struct hostapd_sae_commit_queue, list);
   extern uint32_t __global_pointer$;
+
+  __asm(
+    "sw %1, 0(%0)\n"
+    "beqz t0, .Lwaitsleep\n"
+    :
+    : "r" ((0x600c0000 + 0x048)),
+      "r" ((CRC_START_ADDR << 8) | (CRC_LEN << 20)),
+      "r" (((1UL << (8)))),
+      "r" (((1UL << (1))) | ((1UL << (0))))
+    : "t0",
+    "t1"
+  );
 }

@@ -114,9 +114,11 @@ FunctionDefinition <- DeclarationSpecifiers Declarator DeclarationList? (Compoun
 
 AsmStatement <- ASM TypeQualifier? LPAR AsmArgs? RPAR
 
-AsmArgs <- StringLiteral+ ((COLON AsmClobber) / COLON)*
+AsmArgs <- StringLiteral+ ((COLON AsmClobberList) / COLON)*
 
 AsmClobber <- StringLiteral (LPAR Expression RPAR)?
+
+AsmClobberList <- AsmClobber (COMMA AsmClobber)*
 
 DeclarationList <- Declaration+
 
