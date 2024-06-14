@@ -3,15 +3,20 @@ struct FileLineRef
     string filename;
     size_t lineNum;
 
-    string toString() const
+    string _toString() const
     {
         return filename~":"~lineNum.to!string;
     }
 }
 
+import std.typecons: Typedef;
+
+alias PreprFileLineRef = Typedef!(FileLineRef, FileLineRef.init, "preproc");
+alias CodeFileLineRef = Typedef!(FileLineRef, FileLineRef.init, "code or h");
+
 struct CodeLine
 {
-    FileLineRef preprocessedLineRef;
+    PreprFileLineRef preprocessedLineRef;
     size_t lineNum;
     CodeLinePiece[] code; // one code line can be described on few lines of a preprocessed file
 
@@ -63,7 +68,7 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    void addLine(size_t num, CodeLinePiece[] code, in FileLineRef preprocessedLineRef)
+    void addLine(size_t num, CodeLinePiece[] code, in PreprFileLineRef preprocessedLineRef)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
@@ -87,8 +92,8 @@ struct CodeFile
                 string msg = ("different contents of the same "~
                     ((found.code.length > 1 || code.length > 1) ? "splitten " : "")~
                     "line in source: "~filename~":"~num.to!string~
-                    "\n1: "~found.preprocessedLineRef.toString~
-                    "\n2: "~preprocessedLineRef.toString~
+                    "\n1: "~found.preprocessedLineRef._toString~
+                    "\n2: "~preprocessedLineRef._toString~
                     "\nL1:"~found.code.to!string~
                     "\nL2:"~code.to!string
                 );
@@ -176,7 +181,7 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(in FileLineRef preprocessedLineRef, in FileLineRef codeLineRef, CodeLinePiece[] codeline)
+    void store(in PreprFileLineRef preprocessedLineRef, in CodeFileLineRef codeLineRef, CodeLinePiece[] codeline)
     {
         size_t* fileIdxPtr = (codeLineRef.filename in codeFilesIndex);
         size_t fileIdx;
@@ -213,7 +218,7 @@ private bool isLineDescr(in char[] line)
 
 struct DecodedLinemarker
 {
-    FileLineRef fileRef;
+    CodeFileLineRef fileRef;
     bool startOfFile;
     bool returningToFile;
     bool sysHeader;
@@ -343,7 +348,7 @@ int main(string[] args)
                 if(prevCodeLineNum == 0)
                 {
                     if(options.prepr_refs_comments)
-                        store_file.writeln(`// From prepr file: `~cLine.preprocessedLineRef.toString);
+                        store_file.writeln(`// From prepr file: `~cLine.preprocessedLineRef._toString);
 
                     writeLinemarker(); // first line of preprocessed file
                 }
@@ -420,7 +425,7 @@ void processFile(F)(F file, in string preprFileName)
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && currCodeLine.length)
             {
-                FileLineRef preprFileLine = {filename: preprFileName, lineNum: notStoredPreprFileLineNum};
+                PreprFileLineRef preprFileLine = FileLineRef(filename: preprFileName, lineNum: notStoredPreprFileLineNum);
 
                 try
                     result.store(preprFileLine, prevLinemarker.fileRef, currCodeLine);
@@ -451,7 +456,7 @@ void processFile(F)(F file, in string preprFileName)
 
     // Store latest code line
     //FIXME: code duplication
-    FileLineRef preprFileLine = {filename: preprFileName, lineNum: notStoredPreprFileLineNum};
+    PreprFileLineRef preprFileLine = FileLineRef(filename: preprFileName, lineNum: notStoredPreprFileLineNum);
 
     try
         result.store(preprFileLine, prevLinemarker.fileRef, currCodeLine);
