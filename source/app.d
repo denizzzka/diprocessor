@@ -393,11 +393,9 @@ void processFile(F)(F file, in string preprFileName)
             // Next line will be next piece of a same source line?
             nextLineIsSameOriginalLine = (prevLinemarker.fileRef == linemarker.fileRef);
         }
-        else
-        {
-            //TODO: assert?
-            enforce(linemarker.fileRef.lineNum != 0, "Line number zero is not possible: "~preprFileName~":"~preprFileLineNum.to!string);
 
+        // Store line
+        {
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && currCodeLine.length)
             {
@@ -416,7 +414,7 @@ void processFile(F)(F file, in string preprFileName)
                 notStoredPreprFileLineNum = preprFileLineNum;
 
             // Process current line
-            const pureLinePiece = line.twoSidesChomp();
+            const pureLinePiece = isLineDescr ? line.idup : line.twoSidesChomp();
 
             if(pureLinePiece.length)
                 currCodeLine ~= pureLinePiece;
