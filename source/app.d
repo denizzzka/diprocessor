@@ -425,10 +425,10 @@ void processFile(F)(F file, in string preprFileName)
             // Store previous line if need
             if(!nextLineIsSameOriginalLine && currCodeLine.length)
             {
-                FileLineRef preprFileLine = {filename: preprFileName, lineNum: notStoredPreprFileLineNum};
+                FileLineRef preprLineRef = {filename: preprFileName, lineNum: notStoredPreprFileLineNum};
 
                 try
-                    result.store(preprFileLine, prevLinemarker.fileRef, currCodeLine);
+                    result.store(preprLineRef, prevLinemarker.fileRef, currCodeLine);
                 catch(SameLineDiffContentEx e)
                     return;
 
