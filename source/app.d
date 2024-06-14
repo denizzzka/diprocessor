@@ -63,7 +63,7 @@ struct CodeFile
         return a.lineNum < b.lineNum;
     }
 
-    void addLine(size_t num, CodeLinePiece[] code, in FileLineRef preprocessedLineRef /* FIXME: unused arg */)
+    void addLine(ref CodeLine cl)
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
@@ -73,13 +73,11 @@ struct CodeFile
 
         auto sortedList = assumeSorted!byLineNum(list);
 
-        //TODO: use cl as argument for this func?
-        CodeLine cl = {lineNum: num, code: code};
         auto searchResults = sortedList.trisect(cl);
 
         if(searchResults[1].length != 0)
         {
-            assert(searchResults[1].length == 1, "Many code lines with same line number: "~num.to!string~", line: "~code.to!string);
+            assert(searchResults[1].length == 1, "Many code lines with same line number: "~cl.lineNum.to!string~", line: "~cl.code.to!string);
 
             const found = searchResults[1][0];
 
@@ -89,12 +87,12 @@ struct CodeFile
             if(!equal(l1, l2))
             {
                 string msg = ("different contents of the same "~
-                    ((found.code.length > 1 || code.length > 1) ? "splitten " : "")~
-                    "line in source: "~filename~":"~num.to!string~
+                    ((found.code.length > 1 || cl.code.length > 1) ? "splitten " : "")~
+                    "line in source: "~filename~":"~cl.lineNum.to!string~
                     "\n1: "~found.preprFirstLineRef.toString~
-                    "\n2: "~preprocessedLineRef.toString~
+                    "\n2: "~cl.preprFirstLineRef.toString~
                     "\nL1:"~found.code.to!string~
-                    "\nL2:"~code.to!string
+                    "\nL2:"~cl.code.to!string
                 );
 
                 throw new SameLineDiffContentEx(msg);
@@ -196,7 +194,10 @@ struct Storage
             fileIdx = *fileIdxPtr;
 
         try
-            codeFiles[fileIdx].addLine(codeLineRef.lineNum, codeline, preprocessedLineRef);
+        {
+            CodeLine cl = {lineNum: codeLineRef.lineNum, code: codeline};
+            codeFiles[fileIdx].addLine(cl);
+        }
         catch(SameLineDiffContentEx e)
         {
             import std.stdio;
