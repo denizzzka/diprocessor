@@ -37,6 +37,11 @@ struct CodeLine
 
         return equal(l1, l2);
     }
+
+    bool empty() const
+    {
+        return code.length == 0;
+    }
 }
 
 struct CodeLinePiece
@@ -424,7 +429,7 @@ void processFile(F)(F file, in string preprFileName)
             enforce(linemarker.fileRef.lineNum != 0, "Line number zero is not possible: "~preprFileName~":"~preprFileLineNum.to!string);
 
             // Store previous line if need
-            if(!nextLineIsSameOriginalLine && currCodeLine.code.length)
+            if(!nextLineIsSameOriginalLine && !currCodeLine.empty)
             {
                 currCodeLine.preprocessedLineRef.lineNum = notStoredPreprFileLineNum;
 
@@ -437,7 +442,7 @@ void processFile(F)(F file, in string preprFileName)
             }
 
             // Store current line piece line number in prepared file for further use
-            if(currCodeLine.code.length == 0)
+            if(currCodeLine.empty)
                 notStoredPreprFileLineNum = preprFileLineNum;
 
             // Process current line
