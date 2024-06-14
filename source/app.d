@@ -184,7 +184,7 @@ struct Storage
     static size_t[string] codeFilesIndex;
 
     // Store codeline if it not was added previously
-    void store(in string codeFilename, CodeLine codeline)
+    void store(in string codeFilename, ref CodeLine codeline)
     {
         size_t* fileIdxPtr = (codeFilename in codeFilesIndex);
         size_t fileIdx;
