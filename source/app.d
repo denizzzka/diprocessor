@@ -309,7 +309,7 @@ int main(string[] args)
 
         auto file = File(fname);
 
-        processFile(file, fname);
+        processFile2(file, fname);
     }
 
     //~ auto store_file = File("result.i", "w");
@@ -372,6 +372,71 @@ int main(string[] args)
 }
 
 Storage result;
+
+import std.range;
+import std.stdio;
+
+bool processFile2(F)(F file, in string preprFileName)
+{
+    auto input = file.byLine(Yes.keepTerminator);
+
+    auto lines = input.splitIntoCodeLines;
+
+    foreach(ref key; lines.byKey)
+    {
+        try
+            result.store(key.filename, lines[key]);
+        catch(SameLineDiffContentEx e)
+            return false;
+    }
+
+    return true;
+}
+
+auto splitIntoCodeLines(R)(ref R input)
+if(isInputRange!R)
+{
+    PreprFileLineRef preprFileLine;
+    DecodedLinemarker linemarker;
+    CodeLine[CodeFileLineRef] ret;
+
+    while(true)
+    {
+        if(input.empty)
+            return ret;
+
+        preprFileLine.lineNum++;
+        linemarker.fileRef.lineNum++;
+
+        const isLineDescr = input.front.isLineDescr();
+
+        if(isLineDescr)
+            linemarker = decodeLinemarker(input.front);
+        else
+        {
+            const piece = input.front.twoSidesChomp();
+
+            if(piece.length)
+            {
+                auto lineObj = (linemarker.fileRef in ret);
+
+                if(lineObj is null)
+                {
+                    ret[linemarker.fileRef] = CodeLine(
+                        preprocessedLineRef: preprFileLine,
+                        lineNum: linemarker.fileRef.lineNum
+                    );
+
+                    lineObj = &ret[linemarker.fileRef];
+                }
+
+                lineObj.addPiece(piece);
+            }
+        }
+
+        input.popFront();
+    }
+}
 
 void processFile(F)(F file, in string preprFileName)
 {
