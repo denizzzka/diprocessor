@@ -418,7 +418,8 @@ bool processRecursive(R)(ref R input, ref CodeLine cl, ref DecodedLinemarker imp
 if(isInputRange!R)
 in(lvl <= 1)
 {
-    DecodedLinemarker oldLineMarker;
+    //~ DecodedLinemarker oldLineMarker;
+    bool lineNumSameAsPrev;
     
     while(true)
     {
@@ -430,7 +431,8 @@ in(lvl <= 1)
         stderr.writeln("====");
         stderr.writeln("P: ", preprFileLine._toString);
         stderr.writeln("L: ", implicitLinemarker.fileRef._toString);
-        stderr.writeln("O: ", oldLineMarker.fileRef._toString);
+        stderr.writeln("same: ", lineNumSameAsPrev);
+        //~ stderr.writeln("O: ", oldLineMarker.fileRef._toString);
 
         const isLineDescr = input.front.isLineDescr();
 
@@ -438,38 +440,48 @@ in(lvl <= 1)
         {
             auto newLinemarker = decodeLinemarker(input.front);
 
-            if(newLinemarker.startOfFile && lvl == 0)
-            {
-                input.popFront();
+            //~ if(newLinemarker.startOfFile && lvl == 0)
+            //~ {
+                //~ input.popFront();
 
-                const r = input.processRecursive(cl, newLinemarker, preprFileLine, implicitLinemarker.fileRef.filename, 1);
+                //~ const r = input.processRecursive(cl, newLinemarker, preprFileLine, implicitLinemarker.fileRef.filename, 1);
 
-                // Corrupt prepr file, ignore
-                if(!r)
-                    return false;
+                //~ // Corrupt prepr file, ignore
+                //~ if(!r)
+                    //~ return false;
 
-                continue;
-            }
-            else if(newLinemarker.returningToFile && newLinemarker.fileRef.filename == parentFile)
-            {
-                enforce(lvl > 0, "linemarkers stack empty, but returning linemarker found: "~input.front.to!string);
+                //~ stderr.writeln("next level, curr: ", lvl);
 
-                input.popFront();
+                //~ continue;
+            //~ }
+            //~ else if(newLinemarker.returningToFile && newLinemarker.fileRef.filename == parentFile)
+            //~ {
+                //~ enforce(lvl > 0, "linemarkers stack empty, but returning linemarker found: "~input.front.to!string);
 
-                return true;
-            }
+                //~ input.popFront();
+
+                //~ stderr.writeln("out to prev lvl");
+
+                //~ return true;
+            //~ }
 
             input.popFront();
 
-            oldLineMarker = implicitLinemarker;
+            // breaks implicitLinemarker because we don't need them anymore
+            implicitLinemarker.fileRef.lineNum--;
+            lineNumSameAsPrev = (newLinemarker.fileRef == implicitLinemarker.fileRef);
+
+            stderr.writeln("Compare");
+            stderr.writeln("implicit: ", implicitLinemarker);
+            stderr.writeln("newlinem: ", newLinemarker);
+
+            //~ oldLineMarker = implicitLinemarker;
             implicitLinemarker = newLinemarker;
 
             continue;
         }
         else
         {
-            const lineNumSameAsPrev = (oldLineMarker.fileRef == implicitLinemarker.fileRef);
-
             if(!lineNumSameAsPrev)
             {
                 // Store previous line if need
@@ -477,8 +489,8 @@ in(lvl <= 1)
                 {
                     try
                     {
-                        stderr.writeln("save to: "~oldLineMarker.fileRef.filename~":"~cl.lineNum.to!string);
-                        result.store(oldLineMarker.fileRef.filename, cl);
+                        stderr.writeln("save to: "~implicitLinemarker.fileRef.filename~":"~cl.lineNum.to!string);
+                        result.store(implicitLinemarker.fileRef.filename, cl);
                     }
                     catch(SameLineDiffContentEx e)
                         return false;
