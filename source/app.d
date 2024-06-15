@@ -78,6 +78,8 @@ struct CodeFile
     }
 
     void addLine(ref CodeLine cl)
+    in(cl.preprocessedLineRef.lineNum > 0)
+    in(cl.preprocessedLineRef.filename != "")
     {
         import std.range: assumeSorted;
         import std.algorithm.sorting;
@@ -381,10 +383,11 @@ bool processFile(F)(F file, in string preprFileName)
     auto input = file.byLine(Yes.keepTerminator);
 
     string[] filesOrder;
-    auto allLines = input.splitIntoCodeLines(filesOrder);
+    auto allLines = input.splitIntoCodeLines(preprFileName, filesOrder);
 
-    foreach(ref filename; filesOrder)
+    foreach(const filename; filesOrder)
     {
+        //TODO: replace it by same approach as used for codeFilesIndex
         import std.algorithm.sorting;
 
         auto sorted = allLines[filename].values.sort!("a.lineNum < b.lineNum");
@@ -401,10 +404,12 @@ bool processFile(F)(F file, in string preprFileName)
     return true;
 }
 
-auto splitIntoCodeLines(R)(ref R input, out string[] filesOrder)
+auto splitIntoCodeLines(R)(ref R input, in string preprFileName, out string[] filesOrder)
 if(isInputRange!R)
 {
     PreprFileLineRef preprFileLine;
+    preprFileLine.filename = preprFileName;
+
     DecodedLinemarker linemarker;
     CodeLine[size_t][string] ret;
 
