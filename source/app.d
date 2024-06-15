@@ -380,14 +380,21 @@ bool processFile2(F)(F file, in string preprFileName)
 {
     auto input = file.byLine(Yes.keepTerminator);
 
-    auto allLines = input.splitIntoCodeLines;
+    string[] filesOrder;
+    auto allLines = input.splitIntoCodeLines(filesOrder);
 
-    foreach(ref filename; allLines.byKey)
+    foreach(ref filename; filesOrder)
     {
-        foreach(ref lines; allLines[filename])
+        import std.algorithm.sorting;
+
+        auto sorted = allLines[filename].values.sort!("a.lineNum < b.lineNum");
+
+        foreach(ref line; sorted)
         {
+            stderr.writeln(filename, ":", line.lineNum);
+
             try
-                result.store(filename, lines);
+                result.store(filename, line);
             catch(SameLineDiffContentEx e)
                 return false;
         }
@@ -396,7 +403,7 @@ bool processFile2(F)(F file, in string preprFileName)
     return true;
 }
 
-auto splitIntoCodeLines(R)(ref R input)
+auto splitIntoCodeLines(R)(ref R input, out string[] filesOrder)
 if(isInputRange!R)
 {
     PreprFileLineRef preprFileLine;
@@ -409,7 +416,6 @@ if(isInputRange!R)
             return ret;
 
         preprFileLine.lineNum++;
-        linemarker.fileRef.lineNum++;
 
         const isLineDescr = input.front.isLineDescr();
 
@@ -425,6 +431,9 @@ if(isInputRange!R)
 
                 auto file = (fref.filename in ret);
 
+                if(file is null)
+                    filesOrder ~= fref.filename;
+
                 CodeLine* lineObj = (file is null) ? null : (fref.lineNum in *file);
 
                 if(lineObj is null)
@@ -439,6 +448,8 @@ if(isInputRange!R)
 
                 lineObj.addPiece(piece);
             }
+
+            linemarker.fileRef.lineNum++;
         }
 
         input.popFront();
