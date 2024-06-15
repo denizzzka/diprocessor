@@ -380,14 +380,17 @@ bool processFile2(F)(F file, in string preprFileName)
 {
     auto input = file.byLine(Yes.keepTerminator);
 
-    auto lines = input.splitIntoCodeLines;
+    auto allLines = input.splitIntoCodeLines;
 
-    foreach(ref key; lines.byKey)
+    foreach(ref filename; allLines.byKey)
     {
-        try
-            result.store(key.filename, lines[key]);
-        catch(SameLineDiffContentEx e)
-            return false;
+        foreach(ref lines; allLines[filename])
+        {
+            try
+                result.store(filename, lines);
+            catch(SameLineDiffContentEx e)
+                return false;
+        }
     }
 
     return true;
@@ -398,7 +401,7 @@ if(isInputRange!R)
 {
     PreprFileLineRef preprFileLine;
     DecodedLinemarker linemarker;
-    CodeLine[CodeFileLineRef] ret;
+    CodeLine[size_t][string] ret;
 
     while(true)
     {
@@ -418,16 +421,20 @@ if(isInputRange!R)
 
             if(piece.length)
             {
-                auto lineObj = (linemarker.fileRef in ret);
+                const fref = linemarker.fileRef;
+
+                auto file = (fref.filename in ret);
+
+                CodeLine* lineObj = (file is null) ? null : (fref.lineNum in *file);
 
                 if(lineObj is null)
                 {
-                    ret[linemarker.fileRef] = CodeLine(
+                    ret[fref.filename][fref.lineNum] = CodeLine(
                         preprocessedLineRef: preprFileLine,
                         lineNum: linemarker.fileRef.lineNum
                     );
 
-                    lineObj = &ret[linemarker.fileRef];
+                    lineObj = &ret[fref.filename][fref.lineNum];
                 }
 
                 lineObj.addPiece(piece);
