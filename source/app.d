@@ -309,7 +309,7 @@ int main(string[] args)
 
         auto file = File(fname);
 
-        processFile2(file, fname);
+        processFile(file, fname);
     }
 
     //~ auto store_file = File("result.i", "w");
@@ -376,7 +376,7 @@ Storage result;
 import std.range;
 import std.stdio;
 
-bool processFile2(F)(F file, in string preprFileName)
+bool processFile(F)(F file, in string preprFileName)
 {
     auto input = file.byLine(Yes.keepTerminator);
 
@@ -454,90 +454,4 @@ if(isInputRange!R)
 
         input.popFront();
     }
-}
-
-void processFile(F)(F file, in string preprFileName)
-{
-    import std.typecons: Yes;
-
-    size_t preprFileLineNum;
-    size_t notStoredPreprFileLineNum;
-    DecodedLinemarker linemarker;
-    DecodedLinemarker prevLinemarker;
-    bool nextLineIsSameOriginalLine;
-    CodeLine currCodeLine;
-    currCodeLine.preprocessedLineRef.filename = preprFileName;
-
-    bool storeLine()
-    {
-        currCodeLine.preprocessedLineRef.lineNum = notStoredPreprFileLineNum;
-        currCodeLine.lineNum = prevLinemarker.fileRef.lineNum;
-
-        try
-            result.store(prevLinemarker.fileRef.filename, currCodeLine);
-        catch(SameLineDiffContentEx e)
-            return false;
-
-        return true;
-    }
-
-    DecodedLinemarker[] stack;
-
-    foreach(line; file.byLine(Yes.keepTerminator))
-    {
-        preprFileLineNum++;
-
-        const isLineDescr = line.isLineDescr();
-
-        if(isLineDescr)
-        {
-            linemarker = decodeLinemarker(line);
-
-            if(linemarker.startOfFile)
-                stack ~= linemarker;
-            else if(linemarker.returningToFile)
-            {
-                enforce(stack.length > 0, "linemarkers stack empty, but returning linemarker found:\n"~linemarker.to!string);
-
-                stack.length = stack.length - 1;
-            }
-
-            // Next line will be next piece of a same source line?
-            nextLineIsSameOriginalLine = (prevLinemarker.fileRef == linemarker.fileRef);
-        }
-        else
-        {
-            //TODO: assert?
-            enforce(linemarker.fileRef.lineNum != 0, "Line number zero is not possible: "~preprFileName~":"~preprFileLineNum.to!string);
-
-            // Store previous line if need
-            if(!nextLineIsSameOriginalLine && !currCodeLine.empty)
-            {
-                if(!storeLine())
-                    return; // same line found, file will be ignored
-
-                currCodeLine.code.length = 0;
-            }
-
-            // Store current line piece line number in prepared file for further use
-            if(currCodeLine.empty)
-                notStoredPreprFileLineNum = preprFileLineNum;
-
-            // Process current line
-            const pureLinePiece = line.twoSidesChomp();
-
-            if(pureLinePiece.length)
-                currCodeLine.addPiece(pureLinePiece);
-
-            prevLinemarker = linemarker;
-            nextLineIsSameOriginalLine = false;
-
-            linemarker.fileRef.lineNum++;
-        }
-    }
-
-    enforce(stack.length == 0, "linemarkers stack isn't empty at the end of merging:\n"~stack.to!string);
-
-    // Store latest code line
-    storeLine();
 }
