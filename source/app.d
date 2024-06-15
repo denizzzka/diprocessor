@@ -42,6 +42,11 @@ struct CodeLine
     {
         return code.length == 0;
     }
+
+    void addPiece(string piece, bool isLinemarker)
+    {
+        code ~= CodeLinePiece(piece: piece, isLinemarker: isLinemarker);
+    }
 }
 
 struct CodeLinePiece
@@ -456,7 +461,7 @@ void processFile(F)(F file, in string preprFileName)
             const pureLinePiece = line.twoSidesChomp();
 
             if(pureLinePiece.length)
-                currCodeLine.code ~= CodeLinePiece(piece: pureLinePiece, isLinemarker: isLineDescr);
+                currCodeLine.addPiece(pureLinePiece, isLineDescr);
 
             prevLinemarker = linemarker;
             nextLineIsSameOriginalLine = false;
