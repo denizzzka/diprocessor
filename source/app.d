@@ -391,8 +391,6 @@ bool processFile(F)(F file, in string preprFileName)
 
         foreach(ref line; sorted)
         {
-            stderr.writeln(filename, ":", line.lineNum);
-
             try
                 result.store(filename, line);
             catch(SameLineDiffContentEx e)
