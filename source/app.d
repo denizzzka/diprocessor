@@ -399,84 +399,106 @@ void processFile(F)(F file, in string preprFileName)
 {
     import std.typecons: Yes;
 
-    size_t preprFileLineNum;
-    size_t notStoredPreprFileLineNum;
-    DecodedLinemarker linemarker;
-    DecodedLinemarker prevLinemarker;
-    bool nextLineIsSameOriginalLine;
-    CodeLine currCodeLine;
-    currCodeLine.preprocessedLineRef.filename = preprFileName;
+    auto input = file.byLine(Yes.keepTerminator);
 
-    bool storeLine()
+    PreprFileLineRef preprFileLine;
+    preprFileLine.filename = preprFileName;
+
+    DecodedLinemarker implicitLinemarker;
+    CodeLine cl;
+
+    input.processRecursive(cl, implicitLinemarker, preprFileLine);
+}
+
+import std.range;
+import std.stdio;
+
+/// Returns: false if file can't be parsed due to identical lines with different content
+bool processRecursive(R)(ref R input, ref CodeLine cl, ref DecodedLinemarker implicitLinemarker, ref PreprFileLineRef preprFileLine, in string parentFile = null, in ubyte lvl = 0)
+if(isInputRange!R)
+in(lvl <= 1)
+{
+    DecodedLinemarker oldLineMarker;
+    
+    while(true)
     {
-        currCodeLine.preprocessedLineRef.lineNum = notStoredPreprFileLineNum;
-        currCodeLine.lineNum = prevLinemarker.fileRef.lineNum;
+        if(input.empty)
+            return true;
 
-        try
-            result.store(prevLinemarker.fileRef.filename, currCodeLine);
-        catch(SameLineDiffContentEx e)
-            return false;
+        preprFileLine.lineNum++;
 
-        return true;
-    }
+        stderr.writeln("====");
+        stderr.writeln("P: ", preprFileLine._toString);
+        stderr.writeln("L: ", implicitLinemarker.fileRef._toString);
+        stderr.writeln("O: ", oldLineMarker.fileRef._toString);
 
-    DecodedLinemarker[] stack;
-
-    foreach(line; file.byLine(Yes.keepTerminator))
-    {
-        preprFileLineNum++;
-
-        const isLineDescr = line.isLineDescr();
+        const isLineDescr = input.front.isLineDescr();
 
         if(isLineDescr)
         {
-            linemarker = decodeLinemarker(line);
+            auto newLinemarker = decodeLinemarker(input.front);
 
-            if(linemarker.startOfFile)
-                stack ~= linemarker;
-            else if(linemarker.returningToFile)
+            if(newLinemarker.startOfFile && lvl == 0)
             {
-                enforce(stack.length > 0, "linemarkers stack empty, but returning linemarker found:\n"~linemarker.to!string);
+                input.popFront();
 
-                stack.length = stack.length - 1;
+                const r = input.processRecursive(cl, newLinemarker, preprFileLine, implicitLinemarker.fileRef.filename, 1);
+
+                // Corrupt prepr file, ignore
+                if(!r)
+                    return false;
+
+                continue;
+            }
+            else if(newLinemarker.returningToFile && newLinemarker.fileRef.filename == parentFile)
+            {
+                enforce(lvl > 0, "linemarkers stack empty, but returning linemarker found: "~input.front.to!string);
+
+                input.popFront();
+
+                return true;
             }
 
-            // Next line will be next piece of a same source line?
-            nextLineIsSameOriginalLine = (prevLinemarker.fileRef == linemarker.fileRef);
+            input.popFront();
+
+            oldLineMarker = implicitLinemarker;
+            implicitLinemarker = newLinemarker;
+
+            continue;
         }
         else
         {
-            //TODO: assert?
-            enforce(linemarker.fileRef.lineNum != 0, "Line number zero is not possible: "~preprFileName~":"~preprFileLineNum.to!string);
+            const lineNumSameAsPrev = (oldLineMarker.fileRef == implicitLinemarker.fileRef);
 
-            // Store previous line if need
-            if(!nextLineIsSameOriginalLine && !currCodeLine.empty)
+            if(!lineNumSameAsPrev)
             {
-                if(!storeLine())
-                    return; // same line found, file will be ignored
+                // Store previous line if need
+                if(!cl.empty)
+                {
+                    try
+                    {
+                        stderr.writeln("save to: "~oldLineMarker.fileRef.filename~":"~cl.lineNum.to!string);
+                        result.store(oldLineMarker.fileRef.filename, cl);
+                    }
+                    catch(SameLineDiffContentEx e)
+                        return false;
+                }
 
-                currCodeLine.code.length = 0;
+                // Init new obj to store
+                {
+                    cl = CodeLine.init;
+                    cl.preprocessedLineRef = preprFileLine;
+                    cl.lineNum = implicitLinemarker.fileRef.lineNum;
+                }
             }
 
-            // Store current line piece line number in prepared file for further use
-            if(currCodeLine.empty)
-                notStoredPreprFileLineNum = preprFileLineNum;
+            const piece = input.front.twoSidesChomp();
 
-            // Process current line
-            const pureLinePiece = line.twoSidesChomp();
+            if(piece.length)
+                cl.addPiece(piece);
 
-            if(pureLinePiece.length)
-                currCodeLine.addPiece(pureLinePiece);
-
-            prevLinemarker = linemarker;
-            nextLineIsSameOriginalLine = false;
-
-            linemarker.fileRef.lineNum++;
+            input.popFront();
+            implicitLinemarker.fileRef.lineNum++;
         }
     }
-
-    enforce(stack.length == 0, "linemarkers stack isn't empty at the end of merging:\n"~stack.to!string);
-
-    // Store latest code line
-    storeLine();
 }
