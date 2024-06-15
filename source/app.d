@@ -269,27 +269,6 @@ private DecodedLinemarker decodeLinemarker(in char[] line)
     return ret;
 }
 
-private string getRepeatablePartOfDescr(in char[] line)
-{
-    int quotesFound;
-    string ret;
-
-    foreach(i, c; line)
-    {
-        if(c == '"')
-        {
-            quotesFound++;
-
-            if(quotesFound == 2)
-                ret = line[2 .. i].idup; // ommits latest quote, but we don't need it for indexing
-        }
-    }
-
-    assert(quotesFound == 2, "malformed line: "~line);
-
-    return ret;
-}
-
 struct CliOptions
 {
     bool refs_as_comments;
