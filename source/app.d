@@ -395,23 +395,90 @@ int main(string[] args)
 
 Storage result;
 
+struct IntermLine
+{
+    CodeFileLineRef hdrRef;
+    CodeLine codeLine;
+}
+
 void processFile(F)(F file, in string preprFileName)
 {
     import std.typecons: Yes;
 
     auto input = file.byLine(Yes.keepTerminator);
 
-    PreprFileLineRef preprFileLine;
-    preprFileLine.filename = preprFileName;
+    IntermLine[size_t] lines = input.processToCodeLines();
 
-    DecodedLinemarker implicitLinemarker;
-    CodeLine cl;
+    import std.algorithm.sorting;
 
-    input.processRecursive(cl, implicitLinemarker, preprFileLine);
+    auto linesSorted = lines.byKey; //.sort;
+
+    foreach(ref l; linesSorted)
+    {
+        // Store
+        try
+            result.store(implicitLinemarker.fileRef.filename, cl);
+        catch(SameLineDiffContentEx e)
+            return false;
+
+        // Init new obj to store
+        {
+            cl = CodeLine.init;
+            cl.preprocessedLineRef = preprFileLine;
+            cl.lineNum = implicitLinemarker.fileRef.lineNum;
+        }
+    }
 }
 
 import std.range;
 import std.stdio;
+
+auto processToCodeLines(R)(ref R input)
+if(isInputRange!R)
+{
+    PreprFileLineRef preprFileLine;
+    DecodedLinemarker linemarker;
+    IntermLine[size_t] ret;
+
+    while(true)
+    {
+        if(input.empty)
+            return ret;
+
+        preprFileLine.lineNum++;
+        linemarker.fileRef.lineNum++;
+
+        const isLineDescr = input.front.isLineDescr();
+
+        if(isLineDescr)
+            linemarker = decodeLinemarker(input.front);
+        else
+        {
+            const piece = input.front.twoSidesChomp();
+
+            if(piece.length)
+            {
+                const lnum = linemarker.fileRef.lineNum;
+
+                IntermLine* lineObj = (lnum in ret);
+
+                if(lineObj is null)
+                {
+                    ret[lnum] = IntermLine(
+                        linemarker.fileRef,
+                        CodeLine(preprocessedLineRef: preprFileLine, lineNum: lnum)
+                    );
+
+                    lineObj = &ret[lnum];
+                }
+
+                lineObj.codeLine.addPiece(piece);
+            }
+        }
+
+        input.popFront();
+    }
+}
 
 /// Returns: false if file can't be parsed due to identical lines with different content
 bool processRecursive(R)(ref R input, ref CodeLine cl, ref DecodedLinemarker implicitLinemarker, ref PreprFileLineRef preprFileLine, in string parentFile = null, in ubyte lvl = 0)
