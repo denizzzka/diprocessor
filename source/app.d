@@ -17,15 +17,16 @@ alias CodeFileLineRef = Typedef!(FileLineRef, FileLineRef.init, "code or h");
 struct CodeLine
 {
     PreprFileLineRef preprocessedLineRef;
-    size_t lineNum;
+    size_t lineNum; // C or .h source line num
     CodeLinePiece[] code; // one code line can be described on few lines of a preprocessed file
 
+    //TODO: remove
     private auto stripLinemarkers() const
     {
         import std.array;
         import std.algorithm;
 
-        return code.filter!(a => a.isLinemarker).map!(a => a.piece).join;
+        return code.map!(a => a.piece).join;
     }
 
     bool equal(in CodeLine f) const
@@ -43,15 +44,14 @@ struct CodeLine
         return code.length == 0;
     }
 
-    void addPiece(string piece, bool isLinemarker)
+    void addPiece(string piece)
     {
-        code ~= CodeLinePiece(piece: piece, isLinemarker: isLinemarker);
+        code ~= CodeLinePiece(piece: piece);
     }
 }
 
 struct CodeLinePiece
 {
-    bool isLinemarker;
     string piece;
 }
 
@@ -466,7 +466,7 @@ void processFile(F)(F file, in string preprFileName)
             const pureLinePiece = line.twoSidesChomp();
 
             if(pureLinePiece.length)
-                currCodeLine.addPiece(pureLinePiece, isLineDescr);
+                currCodeLine.addPiece(pureLinePiece);
 
             prevLinemarker = linemarker;
             nextLineIsSameOriginalLine = false;
