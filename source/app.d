@@ -231,6 +231,11 @@ struct DecodedLinemarker
     bool returningToFile;
     bool sysHeader;
     bool externCode;
+
+    string getCanonicalRepr() const pure
+    {
+        return `# `~fileRef.lineNum.to!string~` `~fileRef.filename;
+    }
 }
 
 private DecodedLinemarker decodeLinemarker(in char[] line)
