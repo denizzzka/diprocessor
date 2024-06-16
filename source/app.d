@@ -110,6 +110,8 @@ struct CodeFile
                     "\nL2:"~cl.code.to!string
                 );
 
+                //FIXME: add linemarker equality check
+
                 throw new SameLineDiffContentEx(msg);
             }
 
@@ -378,36 +380,36 @@ int main(string[] args)
 
 Storage result;
 
+import std.algorithm;
 import std.range;
 import std.stdio;
 
 bool processFile(F)(F file, in string preprFileName)
 {
-    auto input = file.byLine(Yes.keepTerminator);
+    CodeLine[] plain;
 
-    string[] filesOrder;
-    auto allLines = input.splitIntoCodeLines(preprFileName, filesOrder);
-
-    foreach(const filename; filesOrder)
     {
-        //TODO: replace it by same approach as used for codeFilesIndex
-        import std.algorithm.sorting;
+        auto input = file.byLine(Yes.keepTerminator);
+        auto allLines = input.splitIntoCodeLines(preprFileName);
+        plain = allLines.values.map!(a => a.values).join;
+    }
 
-        auto sorted = allLines[filename].values.sort!("a.lineNum < b.lineNum");
+    auto sorted = plain.sort!(
+        (a, b) => a.preprocessedLineRef.lineNum < b.preprocessedLineRef.lineNum
+    );
 
-        foreach(ref line; sorted)
-        {
-            try
-                result.store(filename, line);
-            catch(SameLineDiffContentEx e)
-                return false;
-        }
+    foreach(ref line; sorted)
+    {
+        //~ try
+            //~ result.store(filename, line);
+        //~ catch(SameLineDiffContentEx e)
+            //~ return false;
     }
 
     return true;
 }
 
-auto splitIntoCodeLines(R)(ref R input, in string preprFileName, out string[] filesOrder)
+auto splitIntoCodeLines(R)(ref R input, in string preprFileName)
 if(isInputRange!R)
 {
     PreprFileLineRef preprFileLine;
@@ -436,9 +438,6 @@ if(isInputRange!R)
                 const fref = linemarker.fileRef;
 
                 auto file = (fref.filename in ret);
-
-                if(file is null)
-                    filesOrder ~= fref.filename;
 
                 CodeLine* lineObj = (file is null) ? null : (fref.lineNum in *file);
 
