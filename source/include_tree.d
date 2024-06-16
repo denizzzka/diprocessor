@@ -15,7 +15,7 @@ struct Node
     size_t[] optionalBranchesIdx;
 }
 
-struct OrientedGraph
+struct DirectedGraph
 {
     Node[] storage;
     Node root;
@@ -29,14 +29,14 @@ struct OrientedGraph
     }
 }
 
-private bool canFindCycle(in OrientedGraph graph, ref const Node c)
+private bool canFindCycle(in DirectedGraph graph, ref const Node c)
 {
     bool[Node*] checked;
 
     return graph.canFindCycle(c, checked);
 }
 
-private bool canFindCycle(in OrientedGraph graph, ref const Node c, ref bool[Node*] checked)
+private bool canFindCycle(in DirectedGraph graph, ref const Node c, ref bool[Node*] checked)
 {
     if(&c in checked)
         return true;
