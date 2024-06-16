@@ -1,3 +1,5 @@
+import include_tree;
+
 struct FileLineRef
 {
     string filename;
