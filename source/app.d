@@ -316,20 +316,18 @@ import std.stdio;
 
 bool processFile(F)(F file, in string preprFileName)
 {
-    CodeLine[] plain;
+    CodeLine[] sorted;
 
     {
         auto input = file.byLine(Yes.keepTerminator);
         auto allLines = input.splitIntoCodeLines(preprFileName);
-        plain = allLines.values.map!(a => a.values).join;
+        sorted = sortCodeLines(allLines);
     }
-
-    auto sorted = plain.sort!(
-        (a, b) => a.preprocessedLineRef.lineNum < b.preprocessedLineRef.lineNum
-    );
 
     foreach(ref line; sorted)
     {
+        //~ line.writeln;
+
         //~ try
             //~ result.store(filename, line);
         //~ catch(SameLineDiffContentEx e)
@@ -337,6 +335,17 @@ bool processFile(F)(F file, in string preprFileName)
     }
 
     return true;
+}
+
+private CodeLine[] sortCodeLines(R)(ref R input)
+{
+    auto plain = input.values.map!(a => a.values).join;
+
+    auto sorted = plain.sort!(
+        (a, b) => a.preprocessedLineRef.lineNum < b.preprocessedLineRef.lineNum
+    );
+
+    return sorted.array;
 }
 
 auto splitIntoCodeLines(R)(ref R input, in string preprFileName)
