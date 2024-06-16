@@ -314,9 +314,14 @@ import std.algorithm;
 import std.range;
 import std.stdio;
 
+private alias sortByPreprLine = (a, b) => a.preprocessedLineRef.lineNum < b.preprocessedLineRef.lineNum;
+alias SortedCodeLines = SortedRange!(CodeLine[], sortByPreprLine);
+
+SortedCodeLines __res; // FIXME: rename to result
+
 bool processFile(F)(F file, in string preprFileName)
 {
-    CodeLine[] sorted;
+    SortedCodeLines sorted;
 
     {
         auto input = file.byLine(Yes.keepTerminator);
@@ -324,7 +329,9 @@ bool processFile(F)(F file, in string preprFileName)
         sorted = sortCodeLines(allLines);
     }
 
-    foreach(ref line; sorted)
+    //~ auto r = assumeSorted!sortByPreprLine(__res);
+
+    foreach(ref line; __res)
     {
         //~ line.writeln;
 
@@ -337,15 +344,11 @@ bool processFile(F)(F file, in string preprFileName)
     return true;
 }
 
-private CodeLine[] sortCodeLines(R)(ref R input)
+private auto sortCodeLines(R)(ref R input)
 {
     auto plain = input.values.map!(a => a.values).join;
 
-    auto sorted = plain.sort!(
-        (a, b) => a.preprocessedLineRef.lineNum < b.preprocessedLineRef.lineNum
-    );
-
-    return sorted.array;
+    return plain.sort!sortByPreprLine;
 }
 
 auto splitIntoCodeLines(R)(ref R input, in string preprFileName)
