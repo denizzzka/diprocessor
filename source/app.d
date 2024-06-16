@@ -319,6 +319,15 @@ alias SortedCodeLines = SortedRange!(CodeLine[], sortByPreprLine);
 
 SortedCodeLines __res; // FIXME: rename to result
 
+auto splitByHeadersLines(ref SortedCodeLines input)
+{
+    return input.splitWhen!(
+        (a, b) => a.linemarker.fileRef.filename != b.linemarker.fileRef.filename
+    ).assumeSorted!(
+        (a, b) => a.linemarker.fileRef.lineNum < b.linemarker.fileRef.lineNum
+    );
+}
+
 bool processFile(F)(F file, in string preprFileName)
 {
     SortedCodeLines sorted;
@@ -329,16 +338,49 @@ bool processFile(F)(F file, in string preprFileName)
         sorted = sortCodeLines(allLines);
     }
 
-    //~ auto r = assumeSorted!sortByPreprLine(__res);
+    auto stored = __res.splitByHeadersLines;
+    auto newCodeFiles = sorted.splitByHeadersLines;
 
-    foreach(ref line; __res)
+    static string getFilename(T)(ref T cont) => cont.front.linemarker.fileRef.filename;
+
+    static auto getFilenames(R)(ref R input)
     {
-        //~ line.writeln;
+        return input.map!(a => getFilename(a)).array.sort.uniq;
+    }
+
+    auto storedFilenames = getFilenames(stored);
+    auto newFilenames = getFilenames(newCodeFiles);
+
+    string[] intersectingFiles;
+    foreach(nname; newFilenames)
+    {
+        //~ if(storedFilenames.canFind(nname))
+
+        intersectingFiles ~= storedFilenames.find(nname).array;
+    }
+
+    storedFilenames.writeln;
+    newFilenames.writeln;
+    intersectingFiles.writeln;
+    "Done!".writeln;
+
+    __res = sorted;
+
+    //~ foreach(ref newContent; intersectingFiles)
+    {
+
+        //~ if(idx)
+            //~ stored[idx].writeln;
+
+        //~ filename(fileContent).writeln;
+        //~ filename(newCodeFiles.front).writeln;
 
         //~ try
             //~ result.store(filename, line);
         //~ catch(SameLineDiffContentEx e)
             //~ return false;
+
+        //~ i++;
     }
 
     return true;
