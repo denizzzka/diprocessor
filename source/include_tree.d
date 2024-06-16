@@ -6,34 +6,40 @@ import codeline: CodeLine;
 
 struct Node
 {
+    Node* parent;
     string filename; // header name
 
-    //FIXME:
-    //~ union
-    //~ {
-    CodeLine*[] codelines;
-    size_t[] optionalBranchesIdx;
-    //~ }
+    union
+    {
+        CodeLine*[] codeLines;
+        Node*[] optionalBranches;
+    }
 
     bool empty() const
     {
-        return optionalBranchesIdx.length == 0 && codelines.length == 0;
+        return optionalBranches.length == 0 && codeLines.length == 0;
     }
 }
 
 struct DirectedGraph
 {
-    Node[] storage;
-    Node root;
+    import std.container;
 
-    ref Node addNode(ref Node parent, ref Node cp)
+    SList!Node storage;
+    Node*[][string] byFilename;
+
+    Node* createNode(Node* parent, string filename)
     {
-        assert(this.canFindCycle(cp));
+        auto node = Node(filename: filename, parent: parent);
 
-        parent.optionalBranchesIdx ~= storage.length;
-        storage ~= cp;
+        storage.insert(node);
 
-        return storage[$-1];
+        Node* added = &storage.front();
+        byFilename[added.filename] ~= added;
+
+        parent.optionalBranches ~= added;
+
+        return added;
     }
 }
 
@@ -51,9 +57,9 @@ private bool canFindCycle(in DirectedGraph graph, ref const Node c, ref bool[Nod
     else
         checked[&c] = true;
 
-    foreach(idx; c.optionalBranchesIdx)
+    foreach(ref br; c.optionalBranches)
     {
-        if(graph.canFindCycle(graph.storage[idx], checked))
+        if(graph.canFindCycle(*br, checked))
             return true;
     }
 

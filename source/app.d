@@ -340,21 +340,22 @@ bool processFile(F)(F file, in string preprFileName)
             // jump into another header?
             if(l.linemarker.startOfFile)
             {
-                // attempt create new leaf into current
+                // attempt create new file leaf into current
 
                 // store current lines as leaf
-                if(!curr.empty)
-                    curr = &graph.addNode(curr);
-            }
+                // (automatically, just drop and add new curr?)
 
-            // init new node
-            curr = Node(filename: l.linemarker.fileRef.filename);
+                if(curr !is null && !curr.empty)
+                    curr = graph.createNode(curr, l.linemarker.fileRef.filename);
+            }
 
             // return to filename leaf (linemarker code 2)
             assert(l.linemarker.returningToFile);
+
+            curr = curr.parent;
         }
 
-        curr.codelines ~= l;
+        curr.codeLines ~= &l;
 
         prevLm = &l.linemarker;
     }
