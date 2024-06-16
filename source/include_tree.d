@@ -6,18 +6,18 @@ import codeline: CodeLine;
 
 struct Node
 {
-    Node* parent;
-    string filename; // header name
+    Node* parent; //FIXME: graph, not tree
+    debug string filename; // header name
 
-    union
+    static union Content
     {
-        CodeLine*[] codeLines;
-        Node*[] optionalBranches;
+        CodeLine[]* codeLine;
+        Node[]* branch;
     }
 
     bool empty() const
     {
-        return optionalBranches.length == 0 && codeLines.length == 0;
+        return content.length == 0;
     }
 }
 
@@ -26,20 +26,34 @@ struct DirectedGraph
     import std.container;
 
     SList!Node storage;
-    Node*[][string] byFilename;
+    Node*[string] byFilename;
 
-    Node* createNode(Node* parent, string filename)
+    Node* continueProcessingFile(in string filename, Node* parent = null)
     {
-        auto node = Node(filename: filename, parent: parent);
+        Node** node = (filename in byFilename);
+
+        if(node is null)
+            *node = createNode(filename, parent);
+
+        return *node;
+    }
+
+    private Node* createNode(in string filename, Node* parent)
+    {
+        auto node = Node(parent: parent);
+        debug node.filename = filename;
 
         storage.insert(node);
 
         Node* added = &storage.front();
-        byFilename[added.filename] ~= added;
-
-        parent.optionalBranches ~= added;
+        byFilename[filename] = added;
 
         return added;
+    }
+
+    void addContent(Node* node, ref CodeLine cl)
+    {
+        node.content ~= Node.Content(&cl);
     }
 }
 
