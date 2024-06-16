@@ -2,17 +2,23 @@ module include_tree;
 
 //~ import std.exception;
 
-struct CodePiece
-{
-    string filename; // header name
-    size_t beginLineNum; // physical lines in header
-    size_t endLineNum;
-}
+import codeline: CodeLine;
 
 struct Node
 {
-    CodePiece piece;
+    string filename; // header name
+
+    //FIXME:
+    //~ union
+    //~ {
+    CodeLine*[] codelines;
     size_t[] optionalBranchesIdx;
+    //~ }
+
+    bool empty() const
+    {
+        return optionalBranchesIdx.length == 0 && codelines.length == 0;
+    }
 }
 
 struct DirectedGraph
@@ -20,12 +26,14 @@ struct DirectedGraph
     Node[] storage;
     Node root;
 
-    void addNode(ref Node parent, ref Node cp)
+    ref Node addNode(ref Node parent, ref Node cp)
     {
         assert(this.canFindCycle(cp));
 
         parent.optionalBranchesIdx ~= storage.length;
         storage ~= cp;
+
+        return storage[$-1];
     }
 }
 

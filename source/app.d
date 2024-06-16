@@ -1,5 +1,3 @@
-import include_tree;
-
 class SameLineDiffContentEx : Exception
 {
     this(string msg, string file = __FILE__, size_t line = __LINE__)
@@ -328,12 +326,37 @@ bool processFile(F)(F file, in string preprFileName)
         (a, b) => a.preprocessedLineRef.lineNum < b.preprocessedLineRef.lineNum
     );
 
-    foreach(ref line; sorted)
+    import include_tree;
+
+    DirectedGraph graph;
+    DecodedLinemarker* prevLm;
+
+    Node* curr;
+
+    foreach(ref l; sorted)
     {
-        //~ try
-            //~ result.store(filename, line);
-        //~ catch(SameLineDiffContentEx e)
-            //~ return false;
+        if(l.linemarker.fileRef.filename != prevLm.fileRef.filename)
+        {
+            // jump into another header?
+            if(l.linemarker.startOfFile)
+            {
+                // attempt create new leaf into current
+
+                // store current lines as leaf
+                if(!curr.empty)
+                    curr = &graph.addNode(curr);
+            }
+
+            // init new node
+            curr = Node(filename: l.linemarker.fileRef.filename);
+
+            // return to filename leaf (linemarker code 2)
+            assert(l.linemarker.returningToFile);
+        }
+
+        curr.codelines ~= l;
+
+        prevLm = &l.linemarker;
     }
 
     return true;
