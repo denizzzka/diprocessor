@@ -19,7 +19,8 @@ alias CodeFileLineRef = Typedef!(FileLineRef, FileLineRef.init, "code or h");
 struct CodeLine
 {
     PreprFileLineRef preprocessedLineRef;
-    size_t lineNum;
+    DecodedLinemarker linemarker;
+    size_t lineNum() const { return linemarker.fileRef.lineNum; };
     CodeLinePiece[] code; // one code line can be described on few lines of a preprocessed file
 
     private auto stripLinemarkers() const
@@ -445,7 +446,7 @@ if(isInputRange!R)
                 {
                     ret[fref.filename][fref.lineNum] = CodeLine(
                         preprocessedLineRef: preprFileLine,
-                        lineNum: linemarker.fileRef.lineNum
+                        linemarker: linemarker
                     );
 
                     lineObj = &ret[fref.filename][fref.lineNum];
