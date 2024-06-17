@@ -133,7 +133,7 @@ struct PassthroughLines
 
     bool empty()
     {
-        return !currIdxPointsToLeaf && currIdx >= currNode.children.length;
+        return currIdx >= currNode.children.length;
     }
 
     void popFront()
