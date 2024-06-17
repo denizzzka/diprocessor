@@ -5,6 +5,7 @@ import std.algorithm;
 import std.range;
 import sorting: filenamesNotEqual;
 
+//TODO: rename to Payload
 struct Leaf
 {
     CodeLine* codeLine;
@@ -20,14 +21,14 @@ struct Node
         Node*[] children;
     }
 
-    void addChild(Node* child)
+    private void addChild(Node* child)
     {
         assert(isNode);
 
         children ~= child;
     }
 
-    Node* addNewChild(bool createNode)
+    private Node* addNewChild(bool createNode)
     {
         assert(isNode);
 
@@ -38,12 +39,14 @@ struct Node
         return c;
     }
 
-    void addCodeLine(ref CodeLine cl)
+    private Node* addCodeLine(ref CodeLine cl)
     {
         assert(isNode);
 
         auto c = addNewChild(false);
         c.leaf.codeLine = &cl;
+
+        return c;
     }
 }
 
@@ -143,27 +146,54 @@ struct PassthroughLines
 
 struct DirectedGraph
 {
-    private size_t[CodeFileLineRef] indexses;
+    private Node*[CodeFileLineRef] indexses; //TODO: rename var
+
+    private alias Parents = Node*[];
+    private Parents[Node*] parents;
 
     Node root = Node(isNode: true);
 
     Node* getNodeByCodeLine(ref CodeLine cl)
     {
-        size_t* idx = (cl.linemarker.fileRef in indexses);
-
-        if(idx is null)
-            return null;
-
-        return &storage[*idx];
+        return getOrAdd!(() => null)(indexses, cl.linemarker.fileRef);
     }
 
-    Node* addBaseNode()
+    Parents getParents(Node* node)
     {
-        auto node = createNode(root);
-        node.isNode = true;
-
-        return node;
+        return parents.getOrAdd!(() => null)(node);
     }
+
+    //~ Node* addBaseNode()
+    //~ {
+        //~ auto node = createNode(root);
+        //~ node.isNode = true;
+
+        //~ return node;
+    //~ }
+
+    //~ void addChild(Node* parent, Node* child)
+    //~ {
+        //~ parent.addChild(child);
+
+        //~ Node*
+    //~ }
+}
+
+import std.traits: isAssociativeArray;
+
+private auto getOrAdd(alias factory, AA, I)(AA arr, I idx)
+if(isAssociativeArray!AA)
+{
+    auto found = (idx in arr);
+
+    if(found is null)
+    {
+        auto v = factory();
+        arr[idx] = v;
+        found = (idx in arr);
+    }
+
+    return *found;
 }
 
 //~ private bool canFindCycle(in DirectedGraph graph, ref const Node c)
