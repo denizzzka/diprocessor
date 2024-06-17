@@ -5,25 +5,17 @@ import std.algorithm;
 import std.range;
 import sorting: filenamesNotEqual;
 
-struct CodeBlock
-{
-    CodeLine*[] codeBlock;
-}
-
 struct Node
-{
-    GElem*[] children;
-}
-
-struct GElem
 {
     bool isNode;
 
-    union
+    union FlexLine
     {
-        CodeBlock codeBlock;
-        Node node;
+        CodeLine* codeLine;
+        Node* child;
     }
+
+    FlexLine[] flexLines;
 }
 
 private struct LineDescr
@@ -47,45 +39,133 @@ private struct LineDescr
     }
 }
 
-private auto passThrough(R)(ref R input)
-if(isInputRange!R)
+private struct PassthroughLines
 {
-    import std.typecons;
+    static struct Stack
+    {
+        Node* node;
+        size_t idx;
+    }
 
-    return input.map!(
-        (a)
+    Stack[] stack;
+
+    private auto currNode() => stack[$-1].node;
+    private auto currIdx() => stack[$-1].idx;
+    private void currIdxIncr() { stack[$-1].idx++; }
+
+    this(Node* root)
+    {
+        pushStack(root);
+        isHereNextLine();
+    }
+
+    private void pushStack(Node* node)
+    {
+        assert(stack.length < 100);
+        stack ~= Stack(node);
+    }
+
+    private void popStack()
+    {
+        stack.length--;
+    }
+
+    private bool isHereNextLine()
+    {
+        while(true)
         {
-            auto r = tuple(a, LineDescr(a));
-            LineDescr.oldLm = a.linemarker;
-            return r;
+            if(currIdx < currNode.flexLines.length)
+            {
+                if(currNode.isNode)
+                {
+                    pushStack(currNode.flexLines[currIdx].child);
+                    continue;
+                }
+                else
+                    return true; // code line found
+            }
+            else
+            {
+                if(stack.length > 1)
+                {
+                    popStack();
+                    currIdxIncr;
+                    continue;
+                }
+                else
+                    return false; // end of lines
+            }
         }
-    );
+    }
+
+    auto front()
+    {
+        return currNode.flexLines[currIdx].codeLine;
+    }
+
+    void popFront()
+    {
+        currIdxIncr;
+
+        isHereNextLine();
+    }
 }
+
+//~ private auto passThrough(ref Node*[] input)
+//~ {
+    //~ import std.typecons;
+
+    //~ if(input.front.isNode)
+        //~ foreach(ref n; input.front.children)
+            
+    //~ return input.map!(
+        //~ (a)
+        //~ {
+            //~ if(a.isNode)
+                //~ return passThrough;
+
+            //~ auto r = tuple(a, LineDescr(a));
+            //~ LineDescr.oldLm = a.linemarker;
+            //~ return r;
+        //~ }
+    //~ );
+//~ }
 
 struct DirectedGraph
 {
-    private CodeLine[] storage;
+    private Node[] storage;
     private size_t[CodeFileLineRef] indexses;
 
     Node root;
 
-    private void addCodeLine(ref Node node, ref CodeLine cl)
-    {
-        assert((cl.linemarker.fileRef in indexses) is null);
+    //~ private void addCodeLine(ref Node node, ref CodeLine cl)
+    //~ {
+        //~ assert((cl.linemarker.fileRef in indexses) is null);
 
-        indexses[cl.linemarker.fileRef] = storage.length;
-        storage ~= cl;
+        //~ indexses[cl.linemarker.fileRef] = storage.length;
+        //~ storage ~= cl;
 
         //~ node.children
+    //~ }
+
+    Node* getNodeByCodeLine(ref CodeLine cl)
+    {
+        size_t* idx = (cl.linemarker.fileRef in indexses);
+
+        if(idx is null)
+            return null;
+
+        return &storage[*idx];
     }
 
     void addCodeBlock(ref Node parent, CodeLine[] block)
     {
-        auto asd = block.passThrough;
+        import std.algorithm;
 
         foreach(ref line; block)
         {
-
+            // find first line in stored blocks
+            //~ auto found = storage.passThrough.find(line);
         }
     }
 
