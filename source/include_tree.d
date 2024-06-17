@@ -41,6 +41,8 @@ private struct LineDescr
 
 struct PassthroughLines
 {
+    static assert(isInputRange!PassthroughLines);
+
     static struct Stack
     {
         Node* node;
@@ -110,7 +112,7 @@ struct PassthroughLines
 
     bool empty()
     {
-        return currIdx > currNode.flexLines.length;
+        return currIdx >= currNode.flexLines.length;
     }
 
     void popFront()
@@ -161,7 +163,8 @@ struct DirectedGraph
     {
         assert(parent.isNode);
 
-        storage.length++;
+        storage ~= Node.init;
+        parent.flexLines ~= Node.FlexLine(child: &storage[$-1]);
 
         return storage[$-1];
     }
