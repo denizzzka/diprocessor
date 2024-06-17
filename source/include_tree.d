@@ -1,18 +1,26 @@
 module include_tree;
 
-//~ import std.exception;
+import codeline;
 
-struct CodePiece
+struct CodeBlock
 {
-    string filename; // header name
-    size_t beginLineNum; // physical lines in header
-    size_t endLineNum;
+    CodeLine*[] codeBlock;
 }
 
 struct Node
 {
-    CodePiece piece;
-    size_t[] optionalBranchesIdx;
+    GElem*[] children;
+}
+
+struct GElem
+{
+    bool isNode;
+
+    union
+    {
+        CodeBlock codeBlock;
+        Node node;
+    }
 }
 
 struct DirectedGraph
@@ -20,34 +28,31 @@ struct DirectedGraph
     Node[] storage;
     Node root;
 
-    void addNode(ref Node parent, ref Node cp)
-    {
-        assert(this.canFindCycle(cp));
-
-        parent.optionalBranchesIdx ~= storage.length;
-        storage ~= cp;
-    }
+    //~ void addNode(ref Node parent, ref Node cp)
+    //~ {
+        //~ assert(this.canFindCycle(cp));
+    //~ }
 }
 
-private bool canFindCycle(in DirectedGraph graph, ref const Node c)
-{
-    bool[Node*] checked;
+//~ private bool canFindCycle(in DirectedGraph graph, ref const Node c)
+//~ {
+    //~ bool[Node*] checked;
 
-    return graph.canFindCycle(c, checked);
-}
+    //~ return graph.canFindCycle(c, checked);
+//~ }
 
-private bool canFindCycle(in DirectedGraph graph, ref const Node c, ref bool[Node*] checked)
-{
-    if(&c in checked)
-        return true;
-    else
-        checked[&c] = true;
+//~ private bool canFindCycle(in DirectedGraph graph, ref const Node c, ref bool[Node*] checked)
+//~ {
+    //~ if(&c in checked)
+        //~ return true;
+    //~ else
+        //~ checked[&c] = true;
 
-    foreach(idx; c.optionalBranchesIdx)
-    {
-        if(graph.canFindCycle(graph.storage[idx], checked))
-            return true;
-    }
+    //~ foreach(idx; c.optionalBranchesIdx)
+    //~ {
+        //~ if(graph.canFindCycle(graph.storage[idx], checked))
+            //~ return true;
+    //~ }
 
-    return false;
-}
+    //~ return false;
+//~ }

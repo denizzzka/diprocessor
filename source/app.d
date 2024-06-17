@@ -1,5 +1,3 @@
-import include_tree;
-
 class SameLineDiffContentEx : Exception
 {
     this(string msg, string file = __FILE__, size_t line = __LINE__)
@@ -309,8 +307,9 @@ Storage result;
 import std.algorithm;
 import std.range;
 import std.stdio;
+import include_tree;
 
-CodeLine[] __res; // FIXME: rename to result
+DirectedGraph graph; // TODO: rename to result
 
 bool processFile(F)(F file, in string preprFileName)
 {
@@ -322,31 +321,7 @@ bool processFile(F)(F file, in string preprFileName)
         sorted = allLines.assumeSorted!compPreprLines;
     }
 
-    //~ auto stored = __res.splitByHeadersLines;
-    //~ auto newCodeFiles = sorted.splitByHeadersLines;
-
-    //~ static string getFilename(T)(ref T cont) => cont.front.linemarker.fileRef.filename;
-
-    //~ static auto getFilenames(R)(ref R input)
-    //~ {
-        //~ return input.map!(a => getFilename(a)).array.sort.uniq;
-    //~ }
-
-    //~ auto storedFilenames = getFilenames(stored);
-    //~ auto newFilenames = getFilenames(newCodeFiles);
-
-    //~ string[] intersectingFiles;
-    //~ foreach(newLine; sorted)
-    //~ {
-        //~ if(!__res.canFind!sortByCodeFileLine(newLine))
-            //~ writeln(newLine);
-    //~ }
-
-    //~ storedFilenames.writeln;
-    //~ newFilenames.writeln;
-    //~ intersectingFiles.writeln;
-    foreach(ref r; __res)
-        r.writeln;
+    auto codeBlocks = sorted.splitByCodeBlocks;
 
     "Done!".writeln;
 
@@ -354,12 +329,6 @@ bool processFile(F)(F file, in string preprFileName)
 
     //~ foreach(ref newContent; intersectingFiles)
     {
-
-        //~ if(idx)
-            //~ stored[idx].writeln;
-
-        //~ filename(fileContent).writeln;
-        //~ filename(newCodeFiles.front).writeln;
 
         //~ try
             //~ result.store(filename, line);
