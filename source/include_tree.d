@@ -18,27 +18,6 @@ struct Node
     FlexLine[] flexLines;
 }
 
-private struct LineDescr
-{
-    static DecodedLinemarker oldLm;
-    bool isStartOfFile;
-    bool isReturningToFile;
-
-    this(ref CodeLine cl)
-    {
-        const isSameFile = filenamesNotEqual(oldLm, cl.linemarker);
-
-        if(!isSameFile)
-        {
-            isStartOfFile = cl.linemarker.startOfFile;
-
-            assert(!isStartOfFile == cl.linemarker.returningToFile);
-
-            isReturningToFile = cl.linemarker.returningToFile;
-        }
-    }
-}
-
 struct PassthroughLines
 {
     static assert(isInputRange!PassthroughLines);
@@ -122,26 +101,6 @@ struct PassthroughLines
         isHereNextLine();
     }
 }
-
-//~ private auto passThrough(ref Node*[] input)
-//~ {
-    //~ import std.typecons;
-
-    //~ if(input.front.isNode)
-        //~ foreach(ref n; input.front.children)
-            
-    //~ return input.map!(
-        //~ (a)
-        //~ {
-            //~ if(a.isNode)
-                //~ return passThrough;
-
-            //~ auto r = tuple(a, LineDescr(a));
-            //~ LineDescr.oldLm = a.linemarker;
-            //~ return r;
-        //~ }
-    //~ );
-//~ }
 
 struct DirectedGraph
 {
