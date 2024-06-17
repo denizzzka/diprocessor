@@ -337,7 +337,7 @@ bool processFile(F)(F file, in string preprFileName)
     "Result:".writeln;
 
     foreach(ref l; passOverAllLines)
-        writeln(l);
+        writeln(l.linemarker.toString, " ", l.code);
 
     "Done!".writeln;
 

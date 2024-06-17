@@ -7,7 +7,7 @@ struct FileLineRef
     string filename;
     size_t lineNum;
 
-    string _toString() const
+    string _toString() const pure
     {
         return filename~":"~lineNum.to!string;
     }
@@ -71,4 +71,6 @@ struct DecodedLinemarker
     {
         return `# `~fileRef.lineNum.to!string~` `~fileRef.filename;
     }
+
+    string toString() const pure => fileRef._toString;
 }
