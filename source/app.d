@@ -331,9 +331,9 @@ bool processFile(F)(F file, in string preprFileName)
             Node* found = graph.getNodeByCodeLine(line);
 
             if(found)
-                baseNode.addChild(found);
+                graph.addExistingChild(baseNode, found);
             else
-                found.addCodeLine(line);
+                graph.addCodeLine(baseNode, line);
         }
     }
 

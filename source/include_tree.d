@@ -21,20 +21,20 @@ struct Node
         Node*[] children;
     }
 
-    private void addChild(Node* child)
+    private void addExistingChild(Node* child)
     {
         assert(isNode);
 
         children ~= child;
     }
 
-    private Node* addNewChild(bool createNode)
+    private Node* createNewChild(bool createLeaf)
     {
         assert(isNode);
 
-        auto c = new Node(isNode: createNode);
+        auto c = new Node(isNode: !createLeaf);
 
-        addChild(c);
+        addExistingChild(c);
 
         return c;
     }
@@ -43,7 +43,7 @@ struct Node
     {
         assert(isNode);
 
-        auto c = addNewChild(false);
+        auto c = createNewChild(true);
         c.leaf.codeLine = &cl;
 
         return c;
@@ -163,20 +163,22 @@ struct DirectedGraph
         return parents.getOrAdd!(() => null)(node);
     }
 
-    //~ Node* addBaseNode()
-    //~ {
-        //~ auto node = createNode(root);
-        //~ node.isNode = true;
+    Node* addBaseNode()
+    {
+        auto node = root.createNewChild(false);
 
-        //~ return node;
-    //~ }
+        return node;
+    }
 
-    //~ void addChild(Node* parent, Node* child)
-    //~ {
-        //~ parent.addChild(child);
+    void addExistingChild(Node* parent, Node* child)
+    {
+        parent.addExistingChild(child);
+    }
 
-        //~ Node*
-    //~ }
+    Node* addCodeLine(Node* parent, ref CodeLine cl)
+    {
+        return parent.addCodeLine(cl);
+    }
 }
 
 import std.traits: isAssociativeArray;
