@@ -5,36 +5,51 @@ import std.algorithm;
 import std.range;
 import sorting: filenamesNotEqual;
 
+struct Leaf
+{
+    CodeLine* codeLine;
+}
+
 struct Node
 {
-    bool isNode;
+    bool isNode; // or leaf
 
-    union FlexLine
+    union
     {
-        CodeLine* codeLine;
-        Node* child;
+        Leaf leaf;
+        Node*[] children;
     }
-
-    FlexLine[] flexLines;
 
     void addChild(Node* child)
     {
         assert(isNode);
 
-        flexLines ~= FlexLine(child: child);
+        children ~= child;
+    }
+
+    Node* addNewChild(bool createNode)
+    {
+        assert(isNode);
+
+        auto c = new Node(isNode: createNode);
+
+        addChild(c);
+
+        return c;
     }
 
     void addCodeLine(ref CodeLine cl)
     {
-        assert(!isNode);
+        assert(isNode);
 
-        flexLines ~= Node.FlexLine(codeLine: &cl);
+        auto c = addNewChild(false);
+        c.leaf.codeLine = &cl;
     }
 }
 
 struct PassthroughLines
 {
-    static assert(isInputRange!PassthroughLines);
+    //~ static assert(isInputRange!PassthroughLines);
 
     static struct Stack
     {
@@ -65,15 +80,25 @@ struct PassthroughLines
         stack.length--;
     }
 
+    private Node* currChild()
+    {
+        return currNode.children[currIdx];
+    }
+
+    private bool currIdxPointsToLeaf()
+    {
+        return !currChild.isNode;
+    }
+
     private bool isHereNextLine()
     {
         while(true)
         {
-            if(currIdx < currNode.flexLines.length)
+            if(currIdx < currNode.children.length)
             {
-                if(currNode.isNode)
+                if(!currIdxPointsToLeaf)
                 {
-                    pushStack(currNode.flexLines[currIdx].child);
+                    pushStack(currChild);
                     continue;
                 }
                 else
@@ -100,12 +125,12 @@ struct PassthroughLines
     {
         assert(!empty);
 
-        return currNode.flexLines[currIdx].codeLine;
+        return currNode.children[currIdx].leaf.codeLine;
     }
 
     bool empty()
     {
-        return currIdx >= currNode.flexLines.length;
+        return !currIdxPointsToLeaf && currIdx >= currNode.children.length;
     }
 
     void popFront()
@@ -118,20 +143,9 @@ struct PassthroughLines
 
 struct DirectedGraph
 {
-    private Node[] storage;
     private size_t[CodeFileLineRef] indexses;
 
     Node root = Node(isNode: true);
-
-    private Node* createNode(ref Node parent)
-    {
-        assert(parent.isNode);
-
-        storage ~= Node.init;
-        parent.flexLines ~= Node.FlexLine(child: &storage[$-1]);
-
-        return &storage[$-1];
-    }
 
     Node* getNodeByCodeLine(ref CodeLine cl)
     {
