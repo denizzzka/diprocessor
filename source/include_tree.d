@@ -16,6 +16,20 @@ struct Node
     }
 
     FlexLine[] flexLines;
+
+    void addChild(Node* child)
+    {
+        assert(isNode);
+
+        flexLines ~= FlexLine(child: child);
+    }
+
+    void addCodeLine(ref CodeLine cl)
+    {
+        assert(!isNode);
+
+        flexLines ~= Node.FlexLine(codeLine: &cl);
+    }
 }
 
 struct PassthroughLines
@@ -109,16 +123,7 @@ struct DirectedGraph
 
     Node root = Node(isNode: true);
 
-    //TODO: private
-    void addCodeLine(Node* node, ref CodeLine cl)
-    {
-        assert(!node.isNode);
-        assert((cl.linemarker.fileRef in indexses) is null);
-
-        node.flexLines ~= Node.FlexLine(codeLine: &cl);
-    }
-
-    Node* createNode(ref Node parent)
+    private Node* createNode(ref Node parent)
     {
         assert(parent.isNode);
 
@@ -138,22 +143,13 @@ struct DirectedGraph
         return &storage[*idx];
     }
 
-    void addRootCodeBlock(CodeLine*[] block)
+    Node* addBaseNode()
     {
         auto node = createNode(root);
+        node.isNode = true;
 
-        foreach(ref line; block)
-        {
-            addCodeLine(node, *line);
-        }
+        return node;
     }
-
-    //~ ref CodeLine fetchOrAddCodeLine(ref CodeLine cl)
-    //~ {
-        //~ size_t* idx = (cl.linemarker.fileRef in indexses);
-
-
-    //~ }
 }
 
 //~ private bool canFindCycle(in DirectedGraph graph, ref const Node c)

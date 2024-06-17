@@ -322,11 +322,20 @@ bool processFile(F)(F file, in string preprFileName)
 
     auto codeBlocks = sorted.splitByCodeBlocks;
 
-    auto cblock = graph.createNode(graph.root);
+    foreach(ref block; codeBlocks)
+    {
+        auto baseNode = graph.addBaseNode;
 
+        foreach(ref line; block)
+        {
+            Node* found = graph.getNodeByCodeLine(line);
 
-    foreach(ref l; sorted)
-        graph.addCodeLine(cblock, l);
+            if(found)
+                baseNode.addChild(found);
+            else
+                found.addCodeLine(line);
+        }
+    }
 
     //~ cblock.flexLines.map!(a => *a.codeLine).each!writeln;
 
