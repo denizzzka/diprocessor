@@ -138,14 +138,13 @@ struct DirectedGraph
         return &storage[*idx];
     }
 
-    void addCodeBlock(ref Node parent, CodeLine[] block)
+    void addRootCodeBlock(CodeLine*[] block)
     {
-        import std.algorithm;
+        auto node = createNode(root);
 
         foreach(ref line; block)
         {
-            // find first line in stored blocks
-            //~ auto found = storage.passThrough.find(line);
+            addCodeLine(node, *line);
         }
     }
 
