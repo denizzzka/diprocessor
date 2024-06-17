@@ -26,15 +26,20 @@ bool compPreprLines(ref CodeLine a, ref CodeLine b)
 alias SortedFileCodeLines = SortedRange!(CodeLine[], compCodeFileLine);
 alias SortedPreprLines = SortedRange!(CodeLine[], compPreprLines);
 
-bool filenamesEqual(ref CodeLine a, ref CodeLine b)
+bool filenamesNotEqual(ref DecodedLinemarker a, ref DecodedLinemarker b)
 {
-    return a.linemarker.fileRef.filename != b.linemarker.fileRef.filename;
+    return a.fileRef.filename != b.fileRef.filename;
+}
+
+bool filenamesNotEqual(ref CodeLine a, ref CodeLine b)
+{
+    return a.linemarker.filenamesNotEqual(b.linemarker);
 }
 
 auto splitByCodeBlocks(R)(ref R input)
 if(isInputRange!R)
 {
-    return input.splitWhen!filenamesEqual;
+    return input.splitWhen!filenamesNotEqual;
 }
 
 auto sortByFileCodeLines(R)(ref R input)

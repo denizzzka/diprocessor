@@ -1,6 +1,9 @@
 module include_tree;
 
 import codeline;
+import std.algorithm;
+import std.range;
+import sorting: filenamesNotEqual;
 
 struct CodeBlock
 {
@@ -23,14 +26,74 @@ struct GElem
     }
 }
 
+private struct LineDescr
+{
+    static DecodedLinemarker oldLm;
+    bool isStartOfFile;
+    bool isReturningToFile;
+
+    this(ref CodeLine cl)
+    {
+        const isSameFile = filenamesNotEqual(oldLm, cl.linemarker);
+
+        if(!isSameFile)
+        {
+            isStartOfFile = cl.linemarker.startOfFile;
+
+            assert(!isStartOfFile == cl.linemarker.returningToFile);
+
+            isReturningToFile = cl.linemarker.returningToFile;
+        }
+    }
+}
+
+private auto passThrough(R)(ref R input)
+if(isInputRange!R)
+{
+    import std.typecons;
+
+    return input.map!(
+        (a)
+        {
+            auto r = tuple(a, LineDescr(a));
+            LineDescr.oldLm = a.linemarker;
+            return r;
+        }
+    );
+}
+
 struct DirectedGraph
 {
-    Node[] storage;
+    private CodeLine[] storage;
+    private size_t[CodeFileLineRef] indexses;
+
     Node root;
 
-    //~ void addNode(ref Node parent, ref Node cp)
+    private void addCodeLine(ref Node node, ref CodeLine cl)
+    {
+        assert((cl.linemarker.fileRef in indexses) is null);
+
+        indexses[cl.linemarker.fileRef] = storage.length;
+        storage ~= cl;
+
+        //~ node.children
+    }
+
+    void addCodeBlock(ref Node parent, CodeLine[] block)
+    {
+        auto asd = block.passThrough;
+
+        foreach(ref line; block)
+        {
+
+        }
+    }
+
+    //~ ref CodeLine fetchOrAddCodeLine(ref CodeLine cl)
     //~ {
-        //~ assert(this.canFindCycle(cp));
+        //~ size_t* idx = (cl.linemarker.fileRef in indexses);
+
+
     //~ }
 }
 
