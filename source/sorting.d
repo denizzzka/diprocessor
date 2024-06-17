@@ -9,7 +9,7 @@ bool compCodeLineNum(ref CodeLine a, ref CodeLine b)
     return a.lineNum < b.lineNum;
 }
 
-private bool compCodeFileLine(A, B)(A _a, B _b)
+bool compCodeFileLine(A, B)(A _a, B _b)
 {
 
     auto a = _a.linemarker.fileRef;
@@ -26,12 +26,15 @@ bool compPreprLines(ref CodeLine a, ref CodeLine b)
 alias SortedFileCodeLines = SortedRange!(CodeLine[], compCodeFileLine);
 alias SortedPreprLines = SortedRange!(CodeLine[], compPreprLines);
 
+bool filenamesEqual(ref CodeLine a, ref CodeLine b)
+{
+    return a.linemarker.fileRef.filename != b.linemarker.fileRef.filename;
+}
+
 auto splitByCodeBlocks(R)(ref R input)
 if(isInputRange!R)
 {
-    return input.splitWhen!(
-        (a, b) => a.linemarker.fileRef.filename != b.linemarker.fileRef.filename
-    );
+    return input.splitWhen!filenamesEqual;
 }
 
 auto sortByFileCodeLines(R)(ref R input)
