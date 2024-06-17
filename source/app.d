@@ -12,6 +12,7 @@ import std.container: DList;
 import std.exception: enforce;
 import std.conv: to;
 import codeline;
+import sorting;
 
 struct CodeFile
 {
@@ -314,52 +315,16 @@ import std.algorithm;
 import std.range;
 import std.stdio;
 
-private ulong[2] hashString(string s)
-{
-    import std.digest.murmurhash;
-    import std.conv;
-
-    MurmurHash3!(128, 64) hasher;
-    hasher.put(cast(const(ubyte)[]) s);
-
-    return cast(ulong[2]) hasher.finish();
-}
-
-private bool isLess(ulong[2] l, ulong[2] r)
-{
-    return l[1] < r[1] && l[0] < r[0];
-}
-
-private bool sortByCodeFileLine(A, B)(A _a, B _b)
-{
-
-    auto a = _a.linemarker.fileRef;
-    auto b = _b.linemarker.fileRef;
-
-    return !isLess(a.filename.hashString, b.filename.hashString) && a.lineNum < b.lineNum;
-}
-
-alias SortedCodeLines = SortedRange!(CodeLine[], sortByCodeFileLine);
-
-SortedCodeLines __res; // FIXME: rename to result
-
-//~ auto splitByHeadersLines(ref SortedCodeLines input)
-//~ {
-    //~ return input.splitWhen!(
-        //~ (a, b) => a.linemarker.fileRef.filename != b.linemarker.fileRef.filename
-    //~ ).assumeSorted!(
-        //~ (a, b) => a.linemarker.fileRef.lineNum < b.linemarker.fileRef.lineNum
-    //~ );
-//~ }
+CodeLine[] __res; // FIXME: rename to result
 
 bool processFile(F)(F file, in string preprFileName)
 {
-    SortedCodeLines sorted;
+    SortedPreprLines sorted;
 
     {
         auto input = file.byLine(Yes.keepTerminator);
-        auto allLines = input.splitIntoCodeLines(preprFileName);
-        sorted = sortCodeLines(allLines);
+        auto allLines = input.splitIntoCodeLines(preprFileName).sortByPreprLines();
+        sorted = allLines.assumeSorted!compPreprLines;
     }
 
     //~ auto stored = __res.splitByHeadersLines;
@@ -390,7 +355,7 @@ bool processFile(F)(F file, in string preprFileName)
 
     "Done!".writeln;
 
-    __res = sorted;
+    //~ __res = sorted;
 
     //~ foreach(ref newContent; intersectingFiles)
     {
@@ -410,13 +375,6 @@ bool processFile(F)(F file, in string preprFileName)
     }
 
     return true;
-}
-
-private auto sortCodeLines(R)(ref R input)
-{
-    auto plain = input.values.map!(a => a.values).join;
-
-    return plain.sort!sortByCodeFileLine;
 }
 
 auto splitIntoCodeLines(R)(ref R input, in string preprFileName)
