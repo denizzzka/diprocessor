@@ -20,11 +20,6 @@ struct CodeFile
     CodeLine[] list;
     bool ignoredFile;
 
-    private static bool byLineNum(ref CodeLine a, ref CodeLine b)
-    {
-        return a.lineNum < b.lineNum;
-    }
-
     void addLine(ref CodeLine cl)
     in(cl.preprocessedLineRef.lineNum > 0)
     in(cl.preprocessedLineRef.filename != "")
@@ -34,7 +29,7 @@ struct CodeFile
         import std.algorithm.searching;
         import std.array: insertInPlace;
 
-        auto sortedList = assumeSorted!byLineNum(list);
+        auto sortedList = assumeSorted!compCodeLineNum(list);
 
         auto searchResults = sortedList.trisect(cl);
 
