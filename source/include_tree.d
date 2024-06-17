@@ -39,7 +39,7 @@ private struct LineDescr
     }
 }
 
-private struct PassthroughLines
+struct PassthroughLines
 {
     static struct Stack
     {
@@ -93,14 +93,24 @@ private struct PassthroughLines
                     continue;
                 }
                 else
+                {
+                    currIdxIncr; // set empty condition even if zero elements inside of root range
                     return false; // end of lines
+                }
             }
         }
     }
 
     auto front()
     {
+        assert(!empty);
+
         return currNode.flexLines[currIdx].codeLine;
+    }
+
+    bool empty()
+    {
+        return currIdx > currNode.flexLines.length;
     }
 
     void popFront()
@@ -136,17 +146,25 @@ struct DirectedGraph
     private Node[] storage;
     private size_t[CodeFileLineRef] indexses;
 
-    Node root;
+    Node root = Node(isNode: true);
 
-    //~ private void addCodeLine(ref Node node, ref CodeLine cl)
-    //~ {
-        //~ assert((cl.linemarker.fileRef in indexses) is null);
+    //TODO: private
+    void addCodeLine(ref Node node, ref CodeLine cl)
+    {
+        assert(!node.isNode);
+        assert((cl.linemarker.fileRef in indexses) is null);
 
-        //~ indexses[cl.linemarker.fileRef] = storage.length;
-        //~ storage ~= cl;
+        node.flexLines ~= Node.FlexLine(codeLine: &cl);
+    }
 
-        //~ node.children
-    //~ }
+    ref Node createNode(ref Node parent)
+    {
+        assert(parent.isNode);
+
+        storage.length++;
+
+        return storage[$-1];
+    }
 
     Node* getNodeByCodeLine(ref CodeLine cl)
     {

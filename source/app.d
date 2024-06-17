@@ -323,6 +323,17 @@ bool processFile(F)(F file, in string preprFileName)
 
     auto codeBlocks = sorted.splitByCodeBlocks;
 
+    auto cblock = graph.createNode(graph.root);
+    cblock.isNode = false;
+
+    foreach(ref l; sorted)
+        graph.addCodeLine(cblock, l);
+
+    auto passOverAllLines = PassthroughLines(&graph.root);
+
+    foreach(ref l; passOverAllLines)
+        writeln(l);
+
     "Done!".writeln;
 
     //~ __res = sorted;
