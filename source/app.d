@@ -314,19 +314,43 @@ import std.algorithm;
 import std.range;
 import std.stdio;
 
-private alias sortByPreprLine = (a, b) => a.preprocessedLineRef.lineNum < b.preprocessedLineRef.lineNum;
-alias SortedCodeLines = SortedRange!(CodeLine[], sortByPreprLine);
+private ulong[2] hashString(string s)
+{
+    import std.digest.murmurhash;
+    import std.conv;
+
+    MurmurHash3!(128, 64) hasher;
+    hasher.put(cast(const(ubyte)[]) s);
+
+    return cast(ulong[2]) hasher.finish();
+}
+
+private bool isLess(ulong[2] l, ulong[2] r)
+{
+    return l[1] < r[1] && l[0] < r[0];
+}
+
+private bool sortByCodeFileLine(A, B)(A _a, B _b)
+{
+
+    auto a = _a.linemarker.fileRef;
+    auto b = _b.linemarker.fileRef;
+
+    return !isLess(a.filename.hashString, b.filename.hashString) && a.lineNum < b.lineNum;
+}
+
+alias SortedCodeLines = SortedRange!(CodeLine[], sortByCodeFileLine);
 
 SortedCodeLines __res; // FIXME: rename to result
 
-auto splitByHeadersLines(ref SortedCodeLines input)
-{
-    return input.splitWhen!(
-        (a, b) => a.linemarker.fileRef.filename != b.linemarker.fileRef.filename
-    ).assumeSorted!(
-        (a, b) => a.linemarker.fileRef.lineNum < b.linemarker.fileRef.lineNum
-    );
-}
+//~ auto splitByHeadersLines(ref SortedCodeLines input)
+//~ {
+    //~ return input.splitWhen!(
+        //~ (a, b) => a.linemarker.fileRef.filename != b.linemarker.fileRef.filename
+    //~ ).assumeSorted!(
+        //~ (a, b) => a.linemarker.fileRef.lineNum < b.linemarker.fileRef.lineNum
+    //~ );
+//~ }
 
 bool processFile(F)(F file, in string preprFileName)
 {
@@ -338,30 +362,32 @@ bool processFile(F)(F file, in string preprFileName)
         sorted = sortCodeLines(allLines);
     }
 
-    auto stored = __res.splitByHeadersLines;
-    auto newCodeFiles = sorted.splitByHeadersLines;
+    //~ auto stored = __res.splitByHeadersLines;
+    //~ auto newCodeFiles = sorted.splitByHeadersLines;
 
-    static string getFilename(T)(ref T cont) => cont.front.linemarker.fileRef.filename;
+    //~ static string getFilename(T)(ref T cont) => cont.front.linemarker.fileRef.filename;
 
-    static auto getFilenames(R)(ref R input)
-    {
-        return input.map!(a => getFilename(a)).array.sort.uniq;
-    }
+    //~ static auto getFilenames(R)(ref R input)
+    //~ {
+        //~ return input.map!(a => getFilename(a)).array.sort.uniq;
+    //~ }
 
-    auto storedFilenames = getFilenames(stored);
-    auto newFilenames = getFilenames(newCodeFiles);
+    //~ auto storedFilenames = getFilenames(stored);
+    //~ auto newFilenames = getFilenames(newCodeFiles);
 
-    string[] intersectingFiles;
-    foreach(nname; newFilenames)
-    {
-        //~ if(storedFilenames.canFind(nname))
+    //~ string[] intersectingFiles;
+    //~ foreach(newLine; sorted)
+    //~ {
+        //~ if(!__res.canFind!sortByCodeFileLine(newLine))
+            //~ writeln(newLine);
+    //~ }
 
-        intersectingFiles ~= storedFilenames.find(nname).array;
-    }
+    //~ storedFilenames.writeln;
+    //~ newFilenames.writeln;
+    //~ intersectingFiles.writeln;
+    foreach(ref r; __res)
+        r.writeln;
 
-    storedFilenames.writeln;
-    newFilenames.writeln;
-    intersectingFiles.writeln;
     "Done!".writeln;
 
     __res = sorted;
@@ -390,7 +416,7 @@ private auto sortCodeLines(R)(ref R input)
 {
     auto plain = input.values.map!(a => a.values).join;
 
-    return plain.sort!sortByPreprLine;
+    return plain.sort!sortByCodeFileLine;
 }
 
 auto splitIntoCodeLines(R)(ref R input, in string preprFileName)
