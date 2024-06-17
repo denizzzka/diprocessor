@@ -151,7 +151,7 @@ struct DirectedGraph
     Node root = Node(isNode: true);
 
     //TODO: private
-    void addCodeLine(ref Node node, ref CodeLine cl)
+    void addCodeLine(Node* node, ref CodeLine cl)
     {
         assert(!node.isNode);
         assert((cl.linemarker.fileRef in indexses) is null);
@@ -159,14 +159,14 @@ struct DirectedGraph
         node.flexLines ~= Node.FlexLine(codeLine: &cl);
     }
 
-    ref Node createNode(ref Node parent)
+    Node* createNode(ref Node parent)
     {
         assert(parent.isNode);
 
         storage ~= Node.init;
         parent.flexLines ~= Node.FlexLine(child: &storage[$-1]);
 
-        return storage[$-1];
+        return &storage[$-1];
     }
 
     Node* getNodeByCodeLine(ref CodeLine cl)

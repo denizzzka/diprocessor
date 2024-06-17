@@ -243,7 +243,6 @@ int main(string[] args)
         processFile(file, fname);
     }
 
-    //~ auto store_file = File("result.i", "w");
     auto store_file = stdout;
 
     bool wasIgnoredFile;
@@ -324,12 +323,18 @@ bool processFile(F)(F file, in string preprFileName)
     auto codeBlocks = sorted.splitByCodeBlocks;
 
     auto cblock = graph.createNode(graph.root);
-    cblock.isNode = false;
+
 
     foreach(ref l; sorted)
         graph.addCodeLine(cblock, l);
 
-    auto passOverAllLines = PassthroughLines(&graph.root);
+    //~ cblock.flexLines.map!(a => *a.codeLine).each!writeln;
+
+    auto passOverAllLines = PassthroughLines(&(graph.root));
+
+    assert(!passOverAllLines.empty);
+
+    "Result:".writeln;
 
     foreach(ref l; passOverAllLines)
         writeln(l);
