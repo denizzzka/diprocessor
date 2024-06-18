@@ -1,3 +1,8 @@
+UPD: This approach turned out to be ineffective: in some cases it is
+impossible to determine from .i files whether code needs to be inserted
+inside of another expression or whether it itself is an expression
+
+=======
 Takes a list of preprocessed C, C++ or Objective C files from STDIN and returns joint preprocessed file to STDOUT
 
 Build (for non-D users):
