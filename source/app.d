@@ -20,7 +20,7 @@ struct CodeLine
     size_t lineNum;
     CodeLinePiece[] code; // one code line can be described on few lines of a preprocessed file
 
-    private auto stripLinemarkers() const
+    private auto joinForCmp() const
     {
         import std.array;
         import std.algorithm;
@@ -32,8 +32,8 @@ struct CodeLine
     {
         import std.algorithm.comparison: equal;
 
-        const l1 = f.stripLinemarkers;
-        const l2 = this.stripLinemarkers;
+        const l1 = f.joinForCmp;
+        const l2 = this.joinForCmp;
 
         return equal(l1, l2);
     }
