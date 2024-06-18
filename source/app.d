@@ -390,7 +390,7 @@ bool processFile(F)(F file, in string preprFileName)
         //TODO: replace it by same approach as used for codeFilesIndex
         import std.algorithm.sorting;
 
-        auto sorted = allLines[filename].values.sort!("a.lineNum < b.lineNum");
+        auto sorted = allLines[filename].values.sort!(CodeFile.byLineNum);
 
         foreach(ref line; sorted)
         {
